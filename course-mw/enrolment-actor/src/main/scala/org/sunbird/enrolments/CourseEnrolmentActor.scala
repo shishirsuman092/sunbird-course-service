@@ -18,15 +18,17 @@ import org.sunbird.common.models.util.ProjectUtil.EnrolmentType
 import org.sunbird.common.models.util._
 import org.sunbird.common.request.{Request, RequestContext}
 import org.sunbird.common.responsecode.ResponseCode
-import org.sunbird.learner.actors.coursebatch.dao.impl.{CourseBatchDaoImpl, UserCoursesDaoImpl}
-import org.sunbird.learner.actors.coursebatch.dao.{CourseBatchDao, UserCoursesDao}
+import org.sunbird.learner.actors.coursebatch.dao.impl.{BatchUserDaoImpl, CourseBatchDaoImpl, CourseUserDaoImpl, UserCoursesDaoImpl}
+import org.sunbird.learner.actors.coursebatch.dao.{BatchUserDao, CourseBatchDao, CourseUserDao, UserCoursesDao}
 import org.sunbird.learner.actors.group.dao.impl.GroupDaoImpl
 import org.sunbird.learner.util.{ContentSearchUtil, ContentUtil, CourseBatchSchedulerUtil, JsonUtil, Util}
 import org.sunbird.models.course.batch.CourseBatch
 import org.sunbird.models.user.courses.UserCourses
 import org.sunbird.cache.util.RedisCacheUtil
 import org.sunbird.common.CassandraUtil
-import org.sunbird.common.models.util.ProjectUtil;
+import org.sunbird.common.models.util.ProjectUtil
+import org.sunbird.models.batch.user.BatchUser
+import org.sunbird.models.course.user.CourseUser
 import org.sunbird.telemetry.util.TelemetryUtil
 
 import scala.collection.JavaConversions._
@@ -41,6 +43,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
      */
     var courseBatchDao: CourseBatchDao = new CourseBatchDaoImpl()
     var userCoursesDao: UserCoursesDao = new UserCoursesDaoImpl()
+    var courseUserDao: CourseUserDao=new CourseUserDaoImpl()
+    var batchUserDao: BatchUserDao=new BatchUserDaoImpl()
     var groupDao: GroupDaoImpl = new GroupDaoImpl()
     val isCacheEnabled = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")))
         (ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")).toBoolean else true
@@ -96,14 +100,19 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     private def enrolUser(request: Request, courseId: String, batchId: String, userId: String): Unit = {
         val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
-        validateEnrolment(batchData, enrolmentData, true)
+        val id:util.List[String]=List(userId)
+        val ListOfUserDataForCourse:CourseUser=courseUserDao.read(request.getRequestContext,courseId,id)
+        val ListOfUserDataForBatch:BatchUser=batchUserDao.read(request.getRequestContext,batchId,id)
+
+        validateEnrolment(batchData, enrolmentData,true)
         val data: util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
         upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
         logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
         cacheUtil.delete(getCacheKey(userId))
         sender().tell(successResponse(), self)
         generateTelemetryAudit(userId, courseId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
-        notifyUser(userId, batchData, JsonKey.ADD)
+        notifyUser(userId, batchData,JsonKey.ADD)
+        validateUserCourseBAtchData(ListOfUserDataForCourse,ListOfUserDataForBatch,isEnrol=true)
     }
 
     def unEnroll(request:Request): Unit = {
@@ -247,7 +256,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     }
     
     
-    def validateEnrolment(batchData: CourseBatch, enrolmentData: UserCourses, isEnrol: Boolean): Unit = {
+    def validateEnrolment(batchData: CourseBatch, enrolmentData: UserCourses,isEnrol: Boolean): Unit = {
         if(null == batchData) ProjectCommonException.throwClientErrorException(ResponseCode.invalidCourseBatchId, ResponseCode.invalidCourseBatchId.getErrorMessage)
         
         if(!(EnrolmentType.inviteOnly.getVal.equalsIgnoreCase(batchData.getEnrollmentType) ||
@@ -263,15 +272,30 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         if(isEnrol && null != enrolmentData && enrolmentData.isActive) ProjectCommonException.throwClientErrorException(ResponseCode.userAlreadyEnrolledCourse, ResponseCode.userAlreadyEnrolledCourse.getErrorMessage)
         if(!isEnrol && (null == enrolmentData || !enrolmentData.isActive)) ProjectCommonException.throwClientErrorException(ResponseCode.userNotEnrolledCourse, ResponseCode.userNotEnrolledCourse.getErrorMessage)
         if(!isEnrol && ProjectUtil.ProgressStatus.COMPLETED.getValue == enrolmentData.getStatus) ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchAlreadyCompleted, ResponseCode.courseBatchAlreadyCompleted.getErrorMessage)
+
+
+
+    }
+
+    def validateUserCourseBAtchData(ListOfUserDataForCourse:CourseUser,ListOfUserDataForBatch:BatchUser,isEnrol: Boolean): Unit = {
+        if(null==ListOfUserDataForCourse) ProjectCommonException.throwClientErrorException(ResponseCode.invalidCourseUserId, ResponseCode.invalidCourseUserId.getErrorMessage)
+
+        if(null==ListOfUserDataForBatch) ProjectCommonException.throwClientErrorException(ResponseCode.invalidBatchUserId, ResponseCode.invalidBatchUserId.getErrorMessage)
+
     }
 
     def upsertEnrollment(userId: String, courseId: String, batchId: String, data: java.util.Map[String, AnyRef], isNew: Boolean, requestContext: RequestContext): Unit = {
         val dataMap = CassandraUtil.changeCassandraColumnMapping(data)
         if(isNew) {
             userCoursesDao.insertV2(requestContext, dataMap)
+            courseUserDao.insert(requestContext,dataMap)
+            batchUserDao.insert(requestContext,dataMap)
         } else {
             userCoursesDao.updateV2(requestContext, userId, courseId, batchId, dataMap)
+            courseUserDao.update(requestContext,courseId,userId,dataMap)
+            batchUserDao.update(requestContext,batchId,userId,dataMap)
         }
+
     }
 
     def createUserEnrolmentMap(userId: String, courseId: String, batchId: String, enrolmentData: UserCourses, requestedBy: String): java.util.Map[String, AnyRef] = 

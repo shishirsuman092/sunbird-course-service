@@ -139,6 +139,8 @@ public final class JsonKey {
   public static final String COURSE = "course";
   public static final String COURSE_ADDITIONAL_INFO = "courseAdditionalInfo";
   public static final String COURSE_BATCH_DB = "courseBatchDB";
+  public static final String COURSE_USER_DB = "courseUserDB";
+  public static final String BATCH_USER_DB = "batchUserDB";
   public static final String COURSE_CREATED_FOR = "createdFor";
   public static final String COURSE_CREATOR = "courseCreator";
   public static final String COURSE_DURATION = "courseDuration";
