@@ -100,10 +100,6 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     private def enrolUser(request: Request, courseId: String, batchId: String, userId: String): Unit = {
         val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
-        val id:util.List[String]=List(userId)
-        val ListOfUserDataForCourse:CourseUser=courseUserDao.read(request.getRequestContext,courseId,id)
-        val ListOfUserDataForBatch:BatchUser=batchUserDao.read(request.getRequestContext,batchId,id)
-
         validateEnrolment(batchData, enrolmentData,true)
         val data: util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
         upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
@@ -112,7 +108,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         sender().tell(successResponse(), self)
         generateTelemetryAudit(userId, courseId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
         notifyUser(userId, batchData,JsonKey.ADD)
-        validateUserCourseBAtchData(ListOfUserDataForCourse,ListOfUserDataForBatch,isEnrol=true)
+
     }
 
     def unEnroll(request:Request): Unit = {

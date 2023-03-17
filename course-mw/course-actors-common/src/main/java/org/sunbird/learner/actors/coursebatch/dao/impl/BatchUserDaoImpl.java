@@ -6,6 +6,7 @@ import org.sunbird.cassandra.CassandraOperation;
 import org.sunbird.common.CassandraUtil;
 import org.sunbird.common.models.response.Response;
 import org.sunbird.common.models.util.JsonKey;
+import org.sunbird.common.models.util.LoggerUtil;
 import org.sunbird.common.request.RequestContext;
 import org.sunbird.helper.ServiceFactory;
 import org.sunbird.learner.actors.coursebatch.dao.BatchUserDao;
@@ -22,6 +23,8 @@ public class BatchUserDaoImpl implements BatchUserDao {
     private CassandraOperation cassandraOperation = ServiceFactory.getInstance();
     private Util.DbInfo batchUserDb = Util.dbInfoMap.get(JsonKey.BATCH_USER_DB);
     private ObjectMapper mapper = new ObjectMapper();
+
+    public LoggerUtil logger = new LoggerUtil(this.getClass());
 
     @Override
     public BatchUser read(RequestContext requestContext, String batchId, List<String> userId) {
@@ -46,14 +49,23 @@ public class BatchUserDaoImpl implements BatchUserDao {
         public Response insert (RequestContext requestContext, Map < String, Object > batchUserDetails){
             return cassandraOperation.insertRecord(requestContext, batchUserDb.getKeySpace(), batchUserDb.getTableName(), batchUserDetails);
         }
+
+    /**
+     * Update batch user.
+     *
+     * @param map batch user information to be updated
+     * @return Response containing status of batch user update
+     */
     @Override
     public Response update(RequestContext requestContext, String batchId,String userId, Map<String, Object> map) {
+       logger.info(requestContext,"updating data based on batchId and return the response"+batchId);
         Map<String, Object> primaryKey = new HashMap<>();
         primaryKey.put(JsonKey.BATCH_ID, batchId);
         Map<String, Object> attributeMap = new HashMap<>();
         attributeMap.putAll(map);
         attributeMap.remove(JsonKey.BATCH_ID);
         attributeMap = CassandraUtil.changeCassandraColumnMapping(attributeMap);
+        logger.info(requestContext,"changing cassdra cloumnmapping and asign to attributeMap"+attributeMap);
         return cassandraOperation.updateRecord(
                 requestContext, batchUserDb.getKeySpace(), batchUserDb.getTableName(), attributeMap, primaryKey);
     }
