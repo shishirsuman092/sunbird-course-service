@@ -73,7 +73,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             case "unenrol" => unEnroll(request)
             case "multiUserUnenrol" => bulkUnEnroll(request)
             case "listEnrol" => list(request)
-            case "evaluationListEnrol" => evaluationList(request)
+            //case "evaluationListEnrol" => evaluationList(request)
+            case "evaluationListEnrol" => getCandidateDetailsForPIAA(request)
             case "courseEval" => courseEval(request)
             case "notIssueCertificate" => notIssueCertificate(request)
             case _ => ProjectCommonException.throwClientErrorException(ResponseCode.invalidRequestData,
@@ -211,6 +212,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         resp.put(JsonKey.USERS, courseEnrolments)
         resp
     }
+
     def evaluationList(request: Request): Unit = {
         try {
             val response = getCourseList(request)
@@ -536,6 +538,118 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         map.put(JsonKey.STATUS, statusCode.asInstanceOf[AnyRef])
         map.put(JsonKey.COMMENT, comment.asInstanceOf[AnyRef])
         map
+    }
+
+    /**
+     *
+     * @param request
+     */
+
+    def getCandidateDetailsForPIAA(request: Request): Response = {
+        // parse request and create action items
+        val requestBody = prepareUserSearchRequest(request);
+        val userData = ContentSearchUtil.searchUserCompositeSync(request.getRequestContext,
+            request.getContext.getOrDefault(JsonKey.URL_QUERY_STRING, "").asInstanceOf[String],
+            requestBody, request.getContext.get(JsonKey.HEADER).asInstanceOf[java.util.Map[String, String]])
+
+        val userList: java.util.Map[String, java.util.Map[String, AnyRef]] = userData.getOrDefault(JsonKey.RESPONSE, new java.util.HashMap[String, java.util.HashMap[String, AnyRef]]()).asInstanceOf[java.util.Map[String, java.util.Map[String, AnyRef]]]
+        // get
+
+
+
+        /*
+        // if search text is present then search by student or date
+        // get list of students based on page and size
+        val searchText = request.getRequest.getOrDefault("search_text", "").asInstanceOf[String]
+        val courseStatus = request.getRequest.getOrDefault("course_status", -1).asInstanceOf[Integer]
+        val courseId = request.getRequest.getOrDefault("course_id", -1).asInstanceOf[String]
+        val batchId = request.getRequest.getOrDefault("batch_id", -1).asInstanceOf[String]
+
+        // enrich student data
+        if(courseId.isBlank) {
+        // get all PIAA courses
+        val activePIAACourseEnrolments: java.util.List[java.util.Map[String, AnyRef]] = addCourseListDetails(request)
+        val courseMap = {
+            if (CollectionUtils.isNotEmpty(activePIAACourseEnrolments)) {
+                activePIAACourseEnrolments.map(ev => ev.get(JsonKey.IDENTIFIER).asInstanceOf[String] -> ev).toMap
+            } else Map()
+        }
+
+        val courseEnrolments = {
+            if (CollectionUtils.isNotEmpty(courseMap)) {
+                val courseIds = courseMap.keySet.toList
+                val courseUserMap = new util.HashMap[String, java.util.Map[String, AnyRef]]()
+                for (courseId <- courseIds) {
+                    // get list of participants for a given course ID
+                    val participantListByCourseId: java.util.List[java.util.Map[String, AnyRef]] = userCoursesService.getCourseParticipantsDetails(courseId, true, request.getRequestContext)
+                    // iterate through the list to create final response
+                    val participants: java.util.List[java.util.Map[String, AnyRef]] = {
+                        if (CollectionUtils.isNotEmpty(participantListByCourseId)) {
+                            val userIds: java.util.List[String] = participantListByCourseId.map(e => e.getOrDefault(JsonKey.USER_ID, "").asInstanceOf[String]).distinct.filter(id => StringUtils.isNotBlank(id)).toList.asJava
+                            // populate user data
+                            for (userId <- userIds) {
+                                if(userId) {
+
+                                }
+                                val activeUserDetails: Optional[java.util.Map[String, AnyRef]]
+                                = userCoursesService.getParticipantsDetails(userId, true, request.getRequestContext)
+                                if (isNotNull(activeUserDetails.get())) {
+                                    participantListByCourseId.map(x => {
+                                        if (x.get(JsonKey.USER_ID) == activeUserDetails.get().get(JsonKey.USER_ID)) {
+                                            x.put(JsonKey.FIRST_NAME, activeUserDetails.get().get(JsonKey.FIRST_NAME))
+                                            x.put(JsonKey.LAST_NAME, activeUserDetails.get().get(JsonKey.LAST_NAME))
+                                            x.put(JsonKey.ASSESSMENT_NAME, courseMap.get(courseId).get(JsonKey.NAME))
+                                            courseUserMap.put(userId, x)
+                                        }
+                                    })
+                                }
+                            }
+                            participantListByCourseId
+                        } else new java.util.ArrayList[java.util.Map[String, AnyRef]]()
+                    }
+                }
+                courseUserMap.values()
+            } else new util.ArrayList[util.Map[String, AnyRef]]()
+        }
+        } else {
+
+        }*/
+
+        val resp = new Response()
+        resp.put(JsonKey.USERS, userData)
+        sender().tell(resp, self)
+        resp
+
+    }
+
+    def prepareUserSearchRequest(request: Request): String = {
+        val filters: java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {
+            {
+                putAll(request.getRequest.getOrDefault(JsonKey.FILTERS, new java.util.HashMap[String, AnyRef]).asInstanceOf[java.util.Map[String, AnyRef]])
+            }
+        }
+        val sort: java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {
+            {
+                //put(JsonKey.LAST_UPDATED_ON, request.getRequest.getOrDefault(JsonKey.LAST_UPDATED_ON, "desc"))
+                val defaultSort = new java.util.HashMap[String, AnyRef]
+                defaultSort.put(JsonKey.LAST_UPDATED_ON, request.getRequest.getOrDefault(JsonKey.LAST_UPDATED_ON, "desc"))
+                putAll(request.getRequest.getOrDefault(JsonKey.SORT_BY, defaultSort).asInstanceOf[java.util.Map[String, AnyRef]])
+            }
+        }
+        val searchRequest: java.util.Map[String, java.util.Map[String, AnyRef]] = new java.util.HashMap[String, java.util.Map[String, AnyRef]]() {
+            {
+                put(JsonKey.REQUEST, new java.util.HashMap[String, AnyRef]() {
+                    {
+                        put(JsonKey.FILTERS, filters)
+                        put(JsonKey.LIMIT, request.getRequest.getOrDefault(JsonKey.LIMIT, 30.asInstanceOf[AnyRef]))
+                        put(JsonKey.OFFSET, request.getRequest.getOrDefault(JsonKey.OFFSET, 0.asInstanceOf[AnyRef]))
+                        put(JsonKey.QUERY, request.getRequest.getOrDefault(JsonKey.QUERY, ""))
+                        put(JsonKey.SORT_BY, sort)
+                    }
+                })
+            }
+        }
+        new ObjectMapper().writeValueAsString(searchRequest)
     }
 
 }

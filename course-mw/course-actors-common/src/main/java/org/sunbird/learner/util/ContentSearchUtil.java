@@ -190,6 +190,51 @@ public class ContentSearchUtil {
     }
   }
 
+  public static Map<String, Object> searchUserCompositeSync(
+          RequestContext requestContext, String urlQueryString, String queryRequestBody, Map<String, String> headers) {
+    Unirest.clearDefaultHeaders();
+    // TODO
+    String contentCompositeSearchURL = "https://uphrh.in/learner/user/v1/search";
+    // todo uncomment below code and remove hard coded values
+    /*String baseUrl = System.getenv(JsonKey.SUNBIRD_API_MGR_BASE_URL);
+    String searchPath = System.getenv(JsonKey.SUNBIRD_CS_COMPOSITE_SEARCH_PATH);
+    if (StringUtils.isBlank(searchPath))
+      searchPath = PropertiesCache.getInstance().getProperty(JsonKey.SUNBIRD_CS_COMPOSITE_SEARCH_PATH);
+
+    contentCompositeSearchURL = baseUrl + searchPath;*/
+
+    String urlString =
+            StringUtils.isNotBlank(urlQueryString)
+                    ? contentCompositeSearchURL + urlQueryString
+                    : contentCompositeSearchURL;
+
+    BaseRequest request =
+            Unirest.post(urlString).headers(getUpdatedCourseHeaders(headers)).body(queryRequestBody);
+    try {
+      HttpResponse<JsonNode> response = RestUtil.execute(request);
+      if (RestUtil.isSuccessful(response)) {
+        JSONObject result = response.getBody().getObject().getJSONObject("result");
+        Map<String, Object> resultMap = jsonToMap(result);
+        Object contents = resultMap.get(JsonKey.CONTENT);
+        resultMap.remove(JsonKey.CONTENT);
+        resultMap.put(JsonKey.CONTENTS, contents);
+        String resmsgId = RestUtil.getFromResponse(response, "params.resmsgid");
+        String apiId = RestUtil.getFromResponse(response, "id");
+        Map<String, Object> param = new HashMap<>();
+        param.put(JsonKey.RES_MSG_ID, resmsgId);
+        param.put(JsonKey.API_ID, apiId);
+        resultMap.put(JsonKey.PARAMS, param);
+        return resultMap;
+      } else {
+        logger.info(requestContext, "Composite search resturned failed response :: " + response.getStatus());
+        return new HashMap<>();
+      }
+    } catch (Exception e) {
+      logger.error(requestContext, "Exception occurred while calling composite search service :: ", e);
+      return new HashMap<>();
+    }
+  }
+
   public static Map<String, Object> jsonToMap(JSONObject object) throws JSONException {
     Map<String, Object> map = new HashMap<String, Object>();
 
