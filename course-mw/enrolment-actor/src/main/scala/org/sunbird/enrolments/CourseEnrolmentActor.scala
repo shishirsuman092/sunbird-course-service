@@ -526,13 +526,13 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val courseId: String = request.get(JsonKey.COURSE_ID).asInstanceOf[String]
         val userIds: util.List[String] = request.get(JsonKey.USER_IDs).asInstanceOf[util.List[String]]
         val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
-        val comment: String = request.getOrDefault(JsonKey.COMMENT, "").asInstanceOf[String]
-        // creating request map
-        val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(comment, Integer.valueOf(4))
-        // creating cassandra column map
-        val data = CassandraUtil.changeCassandraColumnMapping(map)
+        val comment = request.get(JsonKey.COMMENT).asInstanceOf[util.Map[String, AnyRef]]
         // collecting response
         (0 until (userIds.size())).foreach(x => {
+            // creating request map
+            val map: _root_.java.util.Map[_root_.java.lang.String, AnyRef] = createCommentMap(comment, Integer.valueOf(4), userIds.get(0))
+            // creating cassandra column map
+            val data = CassandraUtil.changeCassandraColumnMapping(map)
             userCoursesDao.updateV2(request.getRequestContext, userIds.get(0), courseId, batchId, data)
         })
         sender().tell(successResponse(), self)
@@ -542,6 +542,20 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val map = new util.HashMap[String, Object]()
         map.put(JsonKey.STATUS, statusCode.asInstanceOf[AnyRef])
         map.put(JsonKey.COMMENT, comment.asInstanceOf[AnyRef])
+        map
+    }
+    private def createCommentMap(message: java.util.Map[String, AnyRef], statusCode: Integer, userId: String) = {
+        val comment: java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {
+            {
+                put(userId, message.get(JsonKey.USER_ID))
+            }
+        }
+        val map: java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {
+            {
+                put(JsonKey.COMMENT, comment)
+                put(JsonKey.STATUS, statusCode.asInstanceOf[AnyRef])
+            }
+        }
         map
     }
 
