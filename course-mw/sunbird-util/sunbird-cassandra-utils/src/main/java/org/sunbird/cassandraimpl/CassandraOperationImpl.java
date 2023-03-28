@@ -574,6 +574,44 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     return response;
   }
 
+
+  @Override
+  public Response getRecordByIndexedPropertyPagination(
+          String keyspaceName, String tableName, Map<String, Object> params, RequestContext requestContext) {
+    long startTime = System.currentTimeMillis();
+    logger.debug(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty called at " + startTime);
+    Response response = new Response();
+    try {
+      Select selectQuery = select().all().from(keyspaceName, tableName);
+      if(params != null & !params.isEmpty()) {
+        logger.info(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty map  " + params);
+        Where selectWhere = selectQuery.where();
+        params.entrySet().forEach(x -> {
+          selectWhere.and(eq(x.getKey(), x.getValue()));
+        });
+      }
+      selectQuery.allowFiltering();
+      logger.info(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty query  " + selectQuery.toString());
+      if (null != selectQuery) logger.debug(requestContext, selectQuery.getQueryString());
+      ResultSet results =
+              connectionManager.getSession(keyspaceName).execute(selectQuery.allowFiltering());
+      response = CassandraUtil.createResponse(results);
+    } catch (Exception e) {
+      logger.error(requestContext,
+              "CassandraOperationImpl:getRecordsByIndexedProperty: "
+                      + Constants.EXCEPTION_MSG_FETCH
+                      + tableName
+                      + " : "
+                      + e.getMessage(),
+              e);
+      throw new ProjectCommonException(
+              ResponseCode.SERVER_ERROR.getErrorCode(),
+              ResponseCode.SERVER_ERROR.getErrorMessage(),
+              ResponseCode.SERVER_ERROR.getResponseCode());
+    }
+    logQueryElapseTime("getRecordsByIndexedProperty", startTime);
+    return response;
+  }
   @Override
   public void deleteRecord(
           String keyspaceName, String tableName, Map<String, String> compositeKeyMap, RequestContext requestContext) {
