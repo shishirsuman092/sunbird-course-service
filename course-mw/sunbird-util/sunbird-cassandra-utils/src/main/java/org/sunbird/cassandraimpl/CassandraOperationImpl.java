@@ -454,10 +454,7 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
       response = CassandraUtil.createResponse(results);
     } catch (Exception e) {
       logger.error(requestContext, Constants.EXCEPTION_MSG_FETCH + tableName + " : " + e.getMessage(), e);
-      throw new ProjectCommonException(
-          ResponseCode.SERVER_ERROR.getErrorCode(),
-          ResponseCode.SERVER_ERROR.getErrorMessage(),
-          ResponseCode.SERVER_ERROR.getResponseCode());
+      throw new RuntimeException("Error in fetching recordByIdentifier");
     }
     logQueryElapseTime("getRecordByIdentifier", startTime);
     return response;
