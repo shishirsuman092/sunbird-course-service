@@ -907,6 +907,7 @@ public enum ResponseCode {
 
   private ResponseCode(int responseCode) {
     this.responseCode = responseCode;
+    this.errorMessage =  getResponseMessage(String.valueOf(responseCode));
   }
 
   public int getResponseCode() {
