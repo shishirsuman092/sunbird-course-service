@@ -11,10 +11,7 @@ import org.sunbird.learner.actors.coursebatch.dao.UserCoursesDao;
 import org.sunbird.learner.util.Util;
 import org.sunbird.models.user.courses.UserCourses;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class UserCoursesDaoImpl implements UserCoursesDao {
@@ -142,6 +139,25 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
   }
 
   @Override
+  public List<Map<String, Object>> getBatchParticipantsDetails(RequestContext requestContext, String batchId, boolean active) {
+    Map<String, Object> queryMap = new HashMap<>();
+    queryMap.put(JsonKey.BATCH_ID, batchId);
+    Response response =
+            cassandraOperation.getRecordByIndexedPropertyPagination(KEYSPACE_NAME, USER_ENROLMENTS, queryMap, requestContext);
+        /*cassandraOperation.getRecords(
+                requestContext, KEYSPACE_NAME, USER_ENROLMENTS, queryMap, Arrays.asList(JsonKey.USER_ID, JsonKey.ACTIVE));*/
+    List<Map<String, Object>> userCoursesList =
+            (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+    if (CollectionUtils.isEmpty(userCoursesList)) {
+      return null;
+    }
+    return userCoursesList
+            .stream()
+            .filter(userCourse -> (active == (boolean) userCourse.get(JsonKey.ACTIVE)))
+            .collect(Collectors.toList());
+  }
+
+  @Override
   public List<Map<String, Object>> getCourseParticipantDetails(RequestContext requestContext, String courseId, boolean active) {
     Map<String, Object> queryMap = new HashMap<>();
     queryMap.put(JsonKey.COURSE_ID, courseId);
@@ -181,7 +197,7 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     if(!CollectionUtils.isEmpty(courseIdList)){
       primaryKey.put(JsonKey.COURSE_ID_KEY, courseIdList);
     }
-    Response response = cassandraOperation.getRecordByIdentifier(requestContext, KEYSPACE_NAME, USER_ENROLMENTS, primaryKey, null);
+    Response response = cassandraOperation.getRecordByIdentifier(requestContext, KEYSPACE_NAME, USER_ENROLMENTS, primaryKey, new ArrayList<>());
     List<Map<String, Object>> userCoursesList = (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
     if (CollectionUtils.isEmpty(userCoursesList)) {
       return null;

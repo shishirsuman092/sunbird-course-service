@@ -115,6 +115,9 @@ public class UserCoursesService {
   public List<String> getParticipantsList(String batchId, boolean active, RequestContext requestContext) {
     return userCourseDao.getBatchParticipants(requestContext, batchId, active);
   }
+  public List<Map<String, Object>> getParticipantsDetailList(String batchId, boolean active, RequestContext requestContext) {
+    return userCourseDao.getBatchParticipantsDetails(requestContext, batchId, active);
+  }
 
   public List<Map<String, Object>> getCourseParticipantsDetails(String courseId, boolean active, RequestContext requestContext) {
     return userCourseDao.getCourseParticipantDetails(requestContext, courseId, active);

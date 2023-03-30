@@ -425,7 +425,9 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
   public Response getRecordByIdentifier(
           RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields) {
     long startTime = System.currentTimeMillis();
-    logger.debug(requestContext, "Cassandra Service getRecordBy key method started at ==" + startTime);
+    logger.info(requestContext, "Cassandra Service getRecordBy key method started at ==" + startTime);
+    logger.info(requestContext, "Cassandra Service getRecordBy key method Keyspace ==" + keyspaceName
+            + "--- table name --- "+ tableName+ " --- Key --- "+keyspaceName+" --- fields ----"+ fields.toString());
     Response response = new Response();
     try {
       Session session = connectionManager.getSession(keyspaceName);
@@ -449,9 +451,10 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
                   CassandraUtil.createQuery(x.getKey(), x.getValue(), selectWhere);
                 });
       }
-      logger.debug(requestContext, selectWhere.getQueryString());
+      logger.info(requestContext, selectWhere.getQueryString());
       ResultSet results = session.execute(selectWhere);
       response = CassandraUtil.createResponse(results);
+      logger.info(requestContext, response.toString());
     } catch (Exception e) {
       logger.error(requestContext, Constants.EXCEPTION_MSG_FETCH + tableName + " : " + e.getMessage(), e);
       throw new RuntimeException("Error in fetching recordByIdentifier");
@@ -541,7 +544,8 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
   }
 
   @Override
-  public Response getRecordsByIndexedProperty(
+  public Response
+  getRecordsByIndexedProperty(
           String keyspaceName, String tableName, String propertyName, Object propertyValue, RequestContext requestContext) {
     long startTime = System.currentTimeMillis();
     logger.debug(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty called at " + startTime);
@@ -566,6 +570,45 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
           ResponseCode.SERVER_ERROR.getErrorCode(),
           ResponseCode.SERVER_ERROR.getErrorMessage(),
           ResponseCode.SERVER_ERROR.getResponseCode());
+    }
+    logQueryElapseTime("getRecordsByIndexedProperty", startTime);
+    return response;
+  }
+
+
+  @Override
+  public Response getRecordByIndexedPropertyPagination(
+          String keyspaceName, String tableName, Map<String, Object> params, RequestContext requestContext) {
+    long startTime = System.currentTimeMillis();
+    logger.debug(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty called at " + startTime);
+    Response response = new Response();
+    try {
+      Select selectQuery = select().all().from(keyspaceName, tableName);
+      if(params != null & !params.isEmpty()) {
+        logger.info(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty map  " + params);
+        Where selectWhere = selectQuery.where();
+        params.entrySet().forEach(x -> {
+          selectWhere.and(eq(x.getKey(), x.getValue()));
+        });
+      }
+      selectQuery.allowFiltering();
+      logger.info(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty query  " + selectQuery.toString());
+      if (null != selectQuery) logger.debug(requestContext, selectQuery.getQueryString());
+      ResultSet results =
+              connectionManager.getSession(keyspaceName).execute(selectQuery.allowFiltering());
+      response = CassandraUtil.createResponse(results);
+    } catch (Exception e) {
+      logger.error(requestContext,
+              "CassandraOperationImpl:getRecordsByIndexedProperty: "
+                      + Constants.EXCEPTION_MSG_FETCH
+                      + tableName
+                      + " : "
+                      + e.getMessage(),
+              e);
+      throw new ProjectCommonException(
+              ResponseCode.SERVER_ERROR.getErrorCode(),
+              ResponseCode.SERVER_ERROR.getErrorMessage(),
+              ResponseCode.SERVER_ERROR.getResponseCode());
     }
     logQueryElapseTime("getRecordsByIndexedProperty", startTime);
     return response;
