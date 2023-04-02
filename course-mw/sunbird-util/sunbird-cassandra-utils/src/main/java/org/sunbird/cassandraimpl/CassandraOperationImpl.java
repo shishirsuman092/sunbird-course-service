@@ -427,12 +427,12 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     long startTime = System.currentTimeMillis();
     logger.info(requestContext, "Cassandra Service getRecordBy key method started at ==" + startTime);
     logger.info(requestContext, "Cassandra Service getRecordBy key method Keyspace ==" + keyspaceName
-            + "--- table name --- "+ tableName+ " --- Key --- "+keyspaceName+" --- fields ----"+ fields.toString());
+            + "--- table name --- "+ tableName+ " --- Key --- "+keyspaceName+" --- fields ----"+ fields);
     Response response = new Response();
     try {
       Session session = connectionManager.getSession(keyspaceName);
       Builder selectBuilder;
-      if (CollectionUtils.isNotEmpty(fields)) {
+      if (fields != null && CollectionUtils.isNotEmpty(fields)) {
         selectBuilder = QueryBuilder.select(fields.toArray(new String[fields.size()]));
       } else {
         selectBuilder = QueryBuilder.select().all();
