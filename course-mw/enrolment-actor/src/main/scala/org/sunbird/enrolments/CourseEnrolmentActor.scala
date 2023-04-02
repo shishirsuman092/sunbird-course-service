@@ -416,17 +416,10 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         TelemetryUtil.telemetryProcessingCall(request, targetedObject, correlationObject, contextMap, "enrol")
     }
 
-    def getScoreByCourseIdUserId(value: AnyRef, userId: String): util.Map[String, AnyRef] = {
-        new util.HashMap[String, AnyRef]()
-
-
-    }
-
     def updateProgressData(enrolments: java.util.List[java.util.Map[String, AnyRef]], userId: String, courseIds: java.util.List[String], requestContext: RequestContext): util.List[java.util.Map[String, AnyRef]] = {
         enrolments.map(enrolment => {
             val leafNodesCount: Int = enrolment.getOrDefault("leafNodesCount", 0.asInstanceOf[AnyRef]).asInstanceOf[Int]
             val progress: Int = enrolment.getOrDefault("progress", 0.asInstanceOf[AnyRef]).asInstanceOf[Int]
-            val score: util.Map[String, AnyRef] = getScoreByCourseIdUserId(enrolment.get(JsonKey.COURSE_ID), userId);
             enrolment.put("status", getCompletionStatus(progress, leafNodesCount).asInstanceOf[AnyRef])
             enrolment.put("completionPercentage", getCompletionPerc(progress, leafNodesCount).asInstanceOf[AnyRef])
         })

@@ -143,9 +143,7 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     Map<String, Object> queryMap = new HashMap<>();
     queryMap.put(JsonKey.BATCH_ID, batchId);
     Response response =
-            cassandraOperation.getRecordByIndexedPropertyPagination(KEYSPACE_NAME, USER_ENROLMENTS, queryMap, requestContext);
-        /*cassandraOperation.getRecords(
-                requestContext, KEYSPACE_NAME, USER_ENROLMENTS, queryMap, Arrays.asList(JsonKey.USER_ID, JsonKey.ACTIVE));*/
+            cassandraOperation.getRecordsByIndexedProperty(KEYSPACE_NAME, USER_ENROLMENTS, JsonKey.BATCH_ID, batchId, requestContext);
     List<Map<String, Object>> userCoursesList =
             (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
     if (CollectionUtils.isEmpty(userCoursesList)) {
