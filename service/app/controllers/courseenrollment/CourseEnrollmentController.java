@@ -33,7 +33,17 @@ public class CourseEnrollmentController extends BaseController {
                   fields.addAll(Arrays.asList(JsonKey.NAME, JsonKey.DESCRIPTION, JsonKey.LEAF_NODE_COUNT, JsonKey.APP_ICON));
                   queryParams.put("fields", fields.toArray(new String[0]));
               }
+
               String userId = (String) request.getContext().getOrDefault(JsonKey.REQUESTED_FOR, request.getContext().get(JsonKey.REQUESTED_BY));
+              logger.info(request.getRequestContext(), "List enrol - request context - "+request.getContext());
+              logger.info(request.getRequestContext(), "List enrol - userId value - "+userId);
+              if(userId == null){
+                  Optional<String> headerUserId = httpRequest.getHeaders().get(JsonKey.X_USER_ID);
+                  logger.info(request.getRequestContext(), "inside if block if userId is null, getting value from header -"+headerUserId.isPresent());
+                  if(headerUserId.isPresent()) {
+                      userId = headerUserId.get();
+                  }
+              }
               validator.validateRequestedBy(userId);
               request.getContext().put(JsonKey.USER_ID, userId);
               request.getRequest().put(JsonKey.USER_ID, userId);
