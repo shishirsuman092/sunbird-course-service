@@ -86,6 +86,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
         val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
         enrolUser(request, courseId, batchId, userId)
+        sender().tell(successResponse(), self)
     }
 
     def multiUserEnroll(request: Request): Unit = {
@@ -95,17 +96,22 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         (0 until userIds.size()).foreach (x => {
             enrolUser(request, courseId, batchId, userIds.get(x))
         })
+        sender().tell(successResponse(), self)
     }
 
     private def enrolUser(request: Request, courseId: String, batchId: String, userId: String): Unit = {
+        logger.info(request.getRequestContext, "user id for enrol - "+userId)
         val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
+        logger.info(request.getRequestContext, "batchData for enrol - "+batchData)
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
+        logger.info(request.getRequestContext, "enrollmentData for enrol - "+enrolmentData)
         validateEnrolment(batchData, enrolmentData, true)
         val data: util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
+        logger.info(request.getRequestContext, "Data for enrol - "+data)
         upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
         logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
         cacheUtil.delete(getCacheKey(userId))
-        sender().tell(successResponse(), self)
+        //sender().tell(successResponse(), self)
         generateTelemetryAudit(userId, courseId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
         notifyUser(userId, batchData, JsonKey.ADD)
     }
