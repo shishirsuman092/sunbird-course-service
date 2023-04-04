@@ -52,6 +52,7 @@ public class LearnerController extends BaseController {
       logger.info(request.getRequestContext(), "getContentState List enrol - userId value - "+userId);
       if(userId == null){
         Optional<String> headerUserId = httpRequest.getHeaders().get(JsonKey.X_USER_ID);
+        logger.info(request.getRequestContext(), "getContentState to print the header -"+httpRequest.getHeaders());
         logger.info(request.getRequestContext(), "getContentState inside if block if userId is null, getting value from header -"+headerUserId.isPresent());
         if(headerUserId.isPresent()) {
           userId = headerUserId.get();
