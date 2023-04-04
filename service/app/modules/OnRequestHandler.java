@@ -68,6 +68,7 @@ public class OnRequestHandler implements ActionCreator {
           }
           if (ConfigFactory.load().getBoolean(JsonKey.AUTH_ENABLED)) {
               message = RequestInterceptor.verifyRequestData(request);
+              logger.info(null,"Message inside the on request handler"+ message);
           } else {
               message = JsonKey.ANONYMOUS;
           }
@@ -89,8 +90,10 @@ public class OnRequestHandler implements ActionCreator {
         request = intializeRequestInfo(request, message, messageId);
         request = request.addAttr(Attrs.X_AUTH_TOKEN, request.header(HeaderParam.X_Authenticated_User_Token.getName()).orElse(""));
         if ((!USER_UNAUTH_STATES.contains(message)) && (childId==null || !USER_UNAUTH_STATES.contains(childId))) {
+            logger.info(null,"Message inside the if"+ message);
             request = request.addAttr(Attrs.USER_ID, message);
             request = request.addAttr(Attrs.IS_AUTH_REQ, "false");
+            logger.info(null,"Request in on request handler"+ request);
           for (String uri : RequestInterceptor.restrictedUriList) {
             if (request.path().contains(uri)) {
                 request = request.addAttr(Attrs.IS_AUTH_REQ, "true");
