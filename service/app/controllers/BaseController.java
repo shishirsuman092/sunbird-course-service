@@ -76,7 +76,6 @@ public class BaseController extends Controller {
     logger.info(request.getRequestContext(),"setRequestContext requested by is "+ httpRequest.attrs().getOptional(Attrs.USER_ID).orElse(null));
     request.getRequest().put(JsonKey.REQUESTED_BY, httpRequest.attrs().getOptional(Attrs.USER_ID).orElse(null));
     logger.info(request.getRequestContext(),"Requested by is "+ httpRequest.attrs().getOptional(Attrs.USER_ID).orElse(null));
-    logger.info(request.getRequestContext(),"Requested for "+ httpRequest.attrs().get(Attrs.REQUESTED_FOR));
     if (StringUtils.isNotBlank(httpRequest.attrs().getOptional(Attrs.REQUESTED_FOR).orElse(null)))
       request.getContext().put(SunbirdKey.REQUESTED_FOR, httpRequest.attrs().get(Attrs.REQUESTED_FOR));
     request.getContext().put(JsonKey.X_AUTH_TOKEN, httpRequest.attrs().getOptional(Attrs.X_AUTH_TOKEN).orElse(""));
