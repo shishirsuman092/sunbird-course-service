@@ -45,6 +45,7 @@ public class LearnerController extends BaseController {
   public CompletionStage<Result> getContentState(Http.Request httpRequest) {
     try {
       JsonNode requestJson = httpRequest.body().asJson();
+      logger.info(null, "getContentState requestJson - "+requestJson);
       Request request =
           createAndInitRequest("getConsumption", requestJson, httpRequest);
       String userId = (String) request.getContext().getOrDefault(JsonKey.REQUESTED_FOR, request.getContext().get(JsonKey.REQUESTED_BY));
