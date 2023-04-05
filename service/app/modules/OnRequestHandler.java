@@ -66,6 +66,8 @@ public class OnRequestHandler implements ActionCreator {
           if (result != null) {
               return result;
           }
+          logger.info(null,"complete Auth enabled flag is "+ ConfigFactory.load().getBoolean(JsonKey.AUTH_ENABLED));
+          logger.info(null,"Auth enabled flag is "+ JsonKey.AUTH_ENABLED);
           if (ConfigFactory.load().getBoolean(JsonKey.AUTH_ENABLED)) {
               message = RequestInterceptor.verifyRequestData(request);
               logger.info(null,"Message inside the on request handler"+ message);
@@ -89,6 +91,8 @@ public class OnRequestHandler implements ActionCreator {
         // call method to set all the required params for the telemetry event(log)...
         request = intializeRequestInfo(request, message, messageId);
         request = request.addAttr(Attrs.X_AUTH_TOKEN, request.header(HeaderParam.X_Authenticated_User_Token.getName()).orElse(""));
+        logger.info(null,"USER_UNAUTH_STATES contains message "+ !USER_UNAUTH_STATES.contains(message));
+        logger.info(null,"USER_UNAUTH_STATES containes child "+ !USER_UNAUTH_STATES.contains(childId));
         if ((!USER_UNAUTH_STATES.contains(message)) && (childId==null || !USER_UNAUTH_STATES.contains(childId))) {
             logger.info(null,"Message inside the if"+ message);
             request = request.addAttr(Attrs.USER_ID, message);
