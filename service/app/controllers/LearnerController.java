@@ -45,21 +45,12 @@ public class LearnerController extends BaseController {
   public CompletionStage<Result> getContentState(Http.Request httpRequest) {
     try {
       JsonNode requestJson = httpRequest.body().asJson();
-      logger.info(null, "getContentState requestJson - "+requestJson);
+      logger.debug(null, "getContentState requestJson - "+requestJson);
       Request request =
           createAndInitRequest("getConsumption", requestJson, httpRequest);
       String userId = (String) request.getContext().getOrDefault(JsonKey.REQUESTED_FOR, request.getContext().get(JsonKey.REQUESTED_BY));
-      logger.info(request.getRequestContext(), "getContentState List enrol - request context - "+request.getContext());
-      logger.info(request.getRequestContext(), "getContentState List enrol - userId value - "+userId);
-      if(userId == null){
-        Optional<String> headerUserId = httpRequest.getHeaders().get(JsonKey.X_USER_ID);
-        logger.info(request.getRequestContext(), "getContentState to print the header -"+httpRequest.getHeaders());
-        logger.info(request.getRequestContext(), "getContentState inside if block if userId is null, getting value from header -"+headerUserId.isPresent());
-        if(headerUserId.isPresent()) {
-          userId = headerUserId.get();
-        }
-      }
-      logger.info(request.getRequestContext(), "User id before validationg - "+userId);
+      logger.debug(request.getRequestContext(), "getContentState List enrol - request context - "+request.getContext());
+      logger.debug(request.getRequestContext(), "getContentState List enrol - userId value - "+userId);
       validator.validateRequestedBy(userId);
       request.getRequest().put(JsonKey.USER_ID, userId);
       validator.validateGetContentState(request);
