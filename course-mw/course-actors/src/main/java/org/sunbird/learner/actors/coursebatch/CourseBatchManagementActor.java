@@ -652,7 +652,7 @@ public class CourseBatchManagementActor extends BaseActor {
       active = (boolean) request.get(JsonKey.ACTIVE);
     }
     String batchID = (String) request.get(JsonKey.BATCH_ID);
-    List<Map<String, Object>> participants = userCoursesService.getParticipantsDetailList(batchID, active, actorMessage.getRequestContext());
+    List<Map<String, Object>> participants = userCoursesService.getParticipantsDetailList(batchID, active, actorMessage);
     logger.info(null," ---- participants list fetched" + participants);
 
     if (CollectionUtils.isEmpty(participants)) {

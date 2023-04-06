@@ -5,6 +5,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.sunbird.cassandra.CassandraOperation;
 import org.sunbird.common.models.response.Response;
 import org.sunbird.common.models.util.JsonKey;
+import org.sunbird.common.request.Request;
 import org.sunbird.common.request.RequestContext;
 import org.sunbird.helper.ServiceFactory;
 import org.sunbird.learner.actors.coursebatch.dao.UserCoursesDao;
@@ -139,11 +140,17 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
   }
 
   @Override
-  public List<Map<String, Object>> getBatchParticipantsDetails(RequestContext requestContext, String batchId, boolean active) {
-    Map<String, Object> queryMap = new HashMap<>();
-    queryMap.put(JsonKey.BATCH_ID, batchId);
+  public List<Map<String, Object>> getBatchParticipantsDetails(Request requestContext, String batchId, boolean active) {
+    Map<String, Object> filterMap = (Map<String, Object>) requestContext.getRequest().get(JsonKey.FILTERS);
+    //Response response =
+    //        cassandraOperation.getRecordsByIndexedProperty(KEYSPACE_NAME, USER_ENROLMENTS, JsonKey.BATCH_ID, batchId, requestContext);
+
+    Map<String, Object> filter = new HashMap<>();
+    filter.put(JsonKey.BATCH_ID,batchId);
+    filter.put(JsonKey.STATUS, filterMap.get(JsonKey.STATUS));
+    filter.put(JsonKey.DATE_TIME, filterMap.get(JsonKey.DATE_TIME));
     Response response =
-            cassandraOperation.getRecordsByIndexedProperty(KEYSPACE_NAME, USER_ENROLMENTS, JsonKey.BATCH_ID, batchId, requestContext);
+            cassandraOperation.getRecordByIndexedPropertyPagination(KEYSPACE_NAME,USER_ENROLMENTS,filter,requestContext.getRequestContext());
     List<Map<String, Object>> userCoursesList =
             (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
     if (CollectionUtils.isEmpty(userCoursesList)) {
