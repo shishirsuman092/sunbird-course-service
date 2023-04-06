@@ -147,8 +147,8 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
 
     Map<String, Object> filter = new HashMap<>();
     filter.put(JsonKey.BATCH_ID,batchId);
-    filter.put(JsonKey.STATUS, filterMap.get(JsonKey.STATUS));
-    filter.put(JsonKey.DATE_TIME, filterMap.get(JsonKey.DATE_TIME));
+    filter.put(JsonKey.STATUS, filterMap.getOrDefault(JsonKey.STATUS,""));
+    filter.put(JsonKey.COURSE_ENROLL_DATE, filterMap.getOrDefault(JsonKey.COURSE_ENROLL_DATE,""));
     Response response =
             cassandraOperation.getRecordByIndexedPropertyPagination(KEYSPACE_NAME,USER_ENROLMENTS,filter,requestContext.getRequestContext());
     List<Map<String, Object>> userCoursesList =

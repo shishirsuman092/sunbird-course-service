@@ -587,12 +587,23 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     Response response = new Response();
     try {
       Select selectQuery = select().all().from(keyspaceName, tableName);
-      if(params != null & !params.isEmpty()) {
-        logger.info(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty map  " + params);
-        Where selectWhere = selectQuery.where();
-        params.entrySet().forEach(x -> {
-          selectWhere.and(eq(x.getKey(), x.getValue()));
-        });
+//      if(params != null & !params.isEmpty()) {
+//        logger.info(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty map  " + params);
+//        Where selectWhere = selectQuery.where();
+//        params.entrySet().forEach(x -> {
+//          selectWhere.and(eq(x.getKey(), x.getValue()));
+//        });
+//      }
+      if (org.apache.commons.collections4.MapUtils.isNotEmpty(params)) {
+        Select.Where where = selectQuery.where();
+        for (Map.Entry<String, Object> filter : params.entrySet()) {
+          Object value = filter.getValue();
+          if (value instanceof List) {
+            where = where.and(QueryBuilder.in(filter.getKey(), ((List) filter.getValue())));
+          } else {
+            where = where.and(QueryBuilder.eq(filter.getKey(), filter.getValue()));
+          }
+        }
       }
       selectQuery.allowFiltering();
       logger.info(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty query  " + selectQuery.toString());
