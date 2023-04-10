@@ -140,17 +140,15 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
   }
 
   @Override
-  public List<Map<String, Object>> getBatchParticipantsDetails(Request requestContext, String batchId, boolean active) {
-    Map<String, Object> filterMap = (Map<String, Object>) requestContext.getRequest().get(JsonKey.FILTERS);
-    //Response response =
-    //        cassandraOperation.getRecordsByIndexedProperty(KEYSPACE_NAME, USER_ENROLMENTS, JsonKey.BATCH_ID, batchId, requestContext);
-
+  public List<Map<String, Object>> getBatchParticipantsDetails(Request request, String batchId, boolean active) {
+    Map<String, Object> filterMap = (Map<String, Object>) request.getRequest().getOrDefault(JsonKey.FILTERS,"");
+    //Map<String, Object> sortMap = (Map<String, Object>) request.getRequest().getOrDefault(JsonKey.SORT_BY,"");
     Map<String, Object> filter = new HashMap<>();
     filter.put(JsonKey.BATCH_ID,batchId);
     filter.put(JsonKey.STATUS, filterMap.getOrDefault(JsonKey.STATUS,""));
-    filter.put(JsonKey.COURSE_ENROLL_DATE, filterMap.getOrDefault(JsonKey.COURSE_ENROLL_DATE,""));
+    filter.put(JsonKey.ENROLL_DATE, filterMap.getOrDefault(JsonKey.ENROLL_DATE,""));
     Response response =
-            cassandraOperation.getRecordByIndexedPropertyPagination(KEYSPACE_NAME,USER_ENROLMENTS,filter,requestContext.getRequestContext());
+            cassandraOperation.getRecordByIndexedPropertyPagination(KEYSPACE_NAME,USER_ENROLMENTS,filter,request);
     List<Map<String, Object>> userCoursesList =
             (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
     if (CollectionUtils.isEmpty(userCoursesList)) {

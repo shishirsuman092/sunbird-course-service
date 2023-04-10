@@ -66,7 +66,7 @@ public interface UserCoursesDao {
    */
   List<String> getBatchParticipants(RequestContext requestContext, String batchId, boolean active);
 
-  List<Map<String, Object>> getBatchParticipantsDetails(Request requestContext, String batchId, boolean active);
+  List<Map<String, Object>> getBatchParticipantsDetails(Request request, String batchId, boolean active);
 
   List<Map<String, Object>> getCourseParticipantDetails(RequestContext requestContext, String courseId, boolean active);
   Optional<Map<String, Object>> getParticipantsDetails(RequestContext requestContext, String userId, boolean active);
