@@ -30,6 +30,7 @@ import org.sunbird.common.Constants;
 import org.sunbird.common.exception.ProjectCommonException;
 import org.sunbird.common.models.response.Response;
 import org.sunbird.common.models.util.*;
+import org.sunbird.common.request.Request;
 import org.sunbird.common.request.RequestContext;
 import org.sunbird.common.responsecode.ResponseCode;
 import org.sunbird.helper.CassandraConnectionManager;
@@ -581,27 +582,39 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
 
   @Override
   public Response getRecordByIndexedPropertyPagination(
-          String keyspaceName, String tableName, Map<String, Object> params, RequestContext requestContext) {
+          String keyspaceName, String tableName, Map<String, Object> params, Request request) {
     long startTime = System.currentTimeMillis();
-    logger.debug(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty called at " + startTime);
+    logger.debug(request.getRequestContext(), "CassandraOperationImpl:getRecordsByIndexedProperty called at " + startTime);
     Response response = new Response();
     try {
       Select selectQuery = select().all().from(keyspaceName, tableName);
-      if(params != null & !params.isEmpty()) {
-        logger.info(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty map  " + params);
-        Where selectWhere = selectQuery.where();
-        params.entrySet().forEach(x -> {
-          selectWhere.and(eq(x.getKey(), x.getValue()));
-        });
+      if (MapUtils.isNotEmpty(params)) {
+        Select.Where where = selectQuery.where();
+        for (Map.Entry<String, Object> filter : params.entrySet()) {
+          Object value = filter.getValue();
+          if(value!=""){
+            if (value instanceof List) {
+              if(((List) value).size()>0)
+              where = where.and(QueryBuilder.in(filter.getKey(), ((List) filter.getValue())));
+            } else {
+              where = where.and(QueryBuilder.eq(filter.getKey(), filter.getValue()));
+            }
+          }
+        }
       }
+      /*if(sortMap.getOrDefault(JsonKey.ENROLL_DATE,"").equals("desc"))
+        selectQuery.orderBy(QueryBuilder.desc(JsonKey.ENROLL_DATE));
+      if(sortMap.getOrDefault(JsonKey.ENROLL_DATE,"").equals("asc"))
+        selectQuery.orderBy(QueryBuilder.asc(JsonKey.ENROLL_DATE));*/
+      selectQuery.limit((Integer) request.getOrDefault(JsonKey.LIMIT,""));
       selectQuery.allowFiltering();
-      logger.info(requestContext, "CassandraOperationImpl:getRecordsByIndexedProperty query  " + selectQuery.toString());
-      if (null != selectQuery) logger.debug(requestContext, selectQuery.getQueryString());
+      logger.debug(request.getRequestContext(), "CassandraOperationImpl:getRecordsByIndexedProperty query  " + selectQuery.toString());
+      if (null != selectQuery) logger.debug(request.getRequestContext(), selectQuery.getQueryString());
       ResultSet results =
               connectionManager.getSession(keyspaceName).execute(selectQuery.allowFiltering());
       response = CassandraUtil.createResponse(results);
     } catch (Exception e) {
-      logger.error(requestContext,
+      logger.error(request.getRequestContext(),
               "CassandraOperationImpl:getRecordsByIndexedProperty: "
                       + Constants.EXCEPTION_MSG_FETCH
                       + tableName
