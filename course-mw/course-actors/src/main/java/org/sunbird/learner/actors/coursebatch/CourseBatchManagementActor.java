@@ -653,8 +653,28 @@ public class CourseBatchManagementActor extends BaseActor {
     logger.info(null," ---- participants list fetched" + participants);
 
     if (CollectionUtils.isNotEmpty(participants)) {
-      if (participants.stream().findFirst().get().keySet().contains(sortBy.keySet().stream().findFirst().get())) {
-        participants.sort(Comparator.comparing(m -> (Date) m.get(sortBy.keySet().stream().findFirst().get()), Comparator.nullsLast(Comparator.reverseOrder())));
+      String sortKey = sortBy.keySet().stream().findFirst().get();
+      if (participants.stream().findFirst().get().keySet().contains(sortKey)) {
+        Object sortKeyVal = participants.stream().findFirst().get().get(sortKey);
+        if(sortKeyVal instanceof Date) {
+          if(sortBy.entrySet().stream().findFirst().get().getValue().equals("desc")) {
+            participants.sort(Comparator.comparing(m -> (Date) m.get(sortKey), Comparator.nullsLast(Comparator.reverseOrder())));
+          } else {
+            participants.sort(Comparator.comparing(m -> (Date) m.get(sortKey), Comparator.nullsLast(Comparator.naturalOrder())));
+          }
+        } else if(sortKeyVal instanceof Integer) {
+          if(sortBy.entrySet().stream().findFirst().get().getValue().equals("desc")) {
+            participants.sort(Comparator.comparing(m -> (Integer) m.get(sortKey), Comparator.nullsLast(Comparator.reverseOrder())));
+          } else {
+            participants.sort(Comparator.comparing(m -> (Integer) m.get(sortKey), Comparator.nullsLast(Comparator.naturalOrder())));
+          }
+        } else {
+          if(sortBy.entrySet().stream().findFirst().get().getValue().equals("desc")) {
+            participants.sort(Comparator.comparing(m -> (String) m.get(sortKey), Comparator.nullsLast(Comparator.reverseOrder())));
+          } else {
+            participants.sort(Comparator.comparing(m -> (String) m.get(sortKey), Comparator.nullsLast(Comparator.naturalOrder())));
+          }
+        }
       } else {
         participants.sort(Comparator.comparing(m -> (Date) m.get(JsonKey.COURSE_ENROLL_DATE), Comparator.nullsLast(Comparator.reverseOrder())));
       }
