@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.sunbird.common.models.response.Response;
+import org.sunbird.common.request.Request;
 import org.sunbird.common.request.RequestContext;
 import org.sunbird.models.user.courses.UserCourses;
 
@@ -65,7 +66,7 @@ public interface UserCoursesDao {
    */
   List<String> getBatchParticipants(RequestContext requestContext, String batchId, boolean active);
 
-  List<Map<String, Object>> getBatchParticipantsDetails(RequestContext requestContext, String batchId, boolean active);
+  List<Map<String, Object>> getBatchParticipantsDetails(Request request, String batchId, boolean active);
 
   List<Map<String, Object>> getCourseParticipantDetails(RequestContext requestContext, String courseId, boolean active);
   Optional<Map<String, Object>> getParticipantsDetails(RequestContext requestContext, String userId, boolean active);

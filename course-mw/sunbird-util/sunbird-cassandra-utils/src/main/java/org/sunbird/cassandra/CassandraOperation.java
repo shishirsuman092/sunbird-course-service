@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import java.util.List;
 import java.util.Map;
 import org.sunbird.common.models.response.Response;
+import org.sunbird.common.request.Request;
 import org.sunbird.common.request.RequestContext;
 
 /**
@@ -59,7 +60,7 @@ public interface CassandraOperation {
   public Response deleteRecord(String keyspaceName, String tableName, String identifier, RequestContext requestContext);
 
     Response getRecordByIndexedPropertyPagination(
-            String keyspaceName, String tableName, Map<String, Object> params, RequestContext requestContext);
+            String keyspaceName, String tableName, Map<String, Object> params, Request request);
 
     /**
    * @desc This method is used to delete record in cassandra db by their primary composite key

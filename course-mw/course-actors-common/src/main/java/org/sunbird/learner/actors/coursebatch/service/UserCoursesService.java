@@ -7,6 +7,7 @@ import org.sunbird.common.models.util.JsonKey;
 import org.sunbird.common.models.util.LoggerUtil;
 import org.sunbird.common.models.util.ProjectUtil;
 import org.sunbird.common.models.util.datasecurity.OneWayHashing;
+import org.sunbird.common.request.Request;
 import org.sunbird.common.request.RequestContext;
 import org.sunbird.dto.SearchDTO;
 import org.sunbird.learner.actors.coursebatch.dao.UserCoursesDao;
@@ -115,8 +116,8 @@ public class UserCoursesService {
   public List<String> getParticipantsList(String batchId, boolean active, RequestContext requestContext) {
     return userCourseDao.getBatchParticipants(requestContext, batchId, active);
   }
-  public List<Map<String, Object>> getParticipantsDetailList(String batchId, boolean active, RequestContext requestContext) {
-    return userCourseDao.getBatchParticipantsDetails(requestContext, batchId, active);
+  public List<Map<String, Object>> getParticipantsDetailList(String batchId, boolean active, Request request) {
+    return userCourseDao.getBatchParticipantsDetails(request, batchId, active);
   }
 
   public List<Map<String, Object>> getCourseParticipantsDetails(String courseId, boolean active, RequestContext requestContext) {
