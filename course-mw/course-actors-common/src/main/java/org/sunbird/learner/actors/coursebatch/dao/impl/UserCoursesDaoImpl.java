@@ -142,7 +142,6 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
   @Override
   public List<Map<String, Object>> getBatchParticipantsDetails(Request request, String batchId, boolean active) {
     Map<String, Object> filterMap = (Map<String, Object>) request.getRequest().getOrDefault(JsonKey.FILTERS,"");
-    //Map<String, Object> sortMap = (Map<String, Object>) request.getRequest().getOrDefault(JsonKey.SORT_BY,"");
     Map<String, Object> filter = new HashMap<>();
     filter.put(JsonKey.BATCH_ID,batchId);
     filter.put(JsonKey.STATUS, filterMap.getOrDefault(JsonKey.STATUS,""));
