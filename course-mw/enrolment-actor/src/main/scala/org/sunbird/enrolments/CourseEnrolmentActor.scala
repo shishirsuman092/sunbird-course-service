@@ -31,6 +31,7 @@ import org.sunbird.learner.actors.coursebatch.service.UserCoursesService
 import org.sunbird.models.batch.user.BatchUser
 import org.sunbird.models.course.user.CourseUser
 import org.sunbird.telemetry.util.TelemetryUtil
+import org.sunbird.userorg.{UserOrgService, UserOrgServiceImpl}
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
@@ -48,6 +49,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     var courseUserDao: CourseUserDao=new CourseUserDaoImpl()
     var batchUserDao: BatchUserDao=new BatchUserDaoImpl()
     var groupDao: GroupDaoImpl = new GroupDaoImpl()
+  var userOrgService:UserOrgService=UserOrgServiceImpl.getInstance()
     val isCacheEnabled = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")))
         (ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")).toBoolean else true
     val ttl: Int = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_ttl")))
@@ -110,9 +112,21 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
         logger.info(request.getRequestContext, "enrollmentData for enrol - "+enrolmentData)
         validateEnrolment(batchData, enrolmentData, true)
+      logger.info(request.getRequestContext,"fetching the userData from the sunbird.user table base on userId"+userId+"auth token")
+      val userData: util.Map[String, AnyRef] = userOrgService.getUserById(userId, request.getContext().get(JsonKey.AUTH_TOKEN).toString)
+      var userName:String=null
+      logger.info(request.getRequestContext,"checking the condition if userId is exist fetch the firstname and lastnme from userData")
+      if (userId.equalsIgnoreCase(userData.get(JsonKey.USER_ID).toString)) {
+        var firstname = userData.get(JsonKey.FIRST_NAME).toString
+        var lastname = userData.get(JsonKey.LAST_NAME).toString
+        userName = firstname.concat(" ").concat(lastname)
+      }
+        val dataBatch: util.Map[String, AnyRef] =createBatchUserMapping(batchId,userId,batchData,userName)
+        val dataCourse: util.Map[String, AnyRef] = createCourseUserMapping(courseId,userId,batchData,userName)
+        upsertBatchUser(userId,batchId,dataBatch,courseId,dataCourse,request.getRequestContext)
         val data: util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
         logger.info(request.getRequestContext, "Data for enrol - "+data)
-        upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
+        upsertEnrollment(userId, courseId, batchId, data,(null == enrolmentData),request.getRequestContext)
         logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
         cacheUtil.delete(getCacheKey(userId))
         //sender().tell(successResponse(), self)
@@ -391,17 +405,30 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val dataMap = CassandraUtil.changeCassandraColumnMapping(data)
         if(isNew) {
             userCoursesDao.insertV2(requestContext, dataMap)
-            courseUserDao.insert(requestContext,dataMap)
-            batchUserDao.insert(requestContext,dataMap)
+
         } else {
             userCoursesDao.updateV2(requestContext, userId, courseId, batchId, dataMap)
-            courseUserDao.update(requestContext,courseId,userId,dataMap)
-            batchUserDao.update(requestContext,batchId,userId,dataMap)
+
         }
 
     }
 
-    def createUserEnrolmentMap(userId: String, courseId: String, batchId: String, enrolmentData: UserCourses, requestedBy: String): java.util.Map[String, AnyRef] = 
+    def upsertBatchUser(userId: String,batchId: String, dataBatch: java.util.Map[String, AnyRef], courseId: String, dataCourse: java.util.Map[String, AnyRef],requestContext: RequestContext): Unit = {
+        val dataMap = CassandraUtil.changeCassandraColumnMapping(dataBatch)
+        val dataCourseMap = CassandraUtil.changeCassandraColumnMapping(dataCourse)
+        val isNew:Boolean=true
+        if(isNew){
+            batchUserDao.insert(requestContext, dataMap)
+            courseUserDao.insert(requestContext, dataCourseMap)
+
+        }else {
+            batchUserDao.update(requestContext, batchId, userId, dataMap)
+            courseUserDao.update(requestContext, courseId, userId, dataCourseMap)
+        }
+    }
+
+
+        def createUserEnrolmentMap(userId: String, courseId: String, batchId: String, enrolmentData: UserCourses, requestedBy: String): java.util.Map[String, AnyRef] =
         new java.util.HashMap[String, AnyRef]() {{
             put(JsonKey.USER_ID, userId)
             put(JsonKey.COURSE_ID, courseId)
@@ -415,6 +442,38 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                 put(JsonKey.COURSE_PROGRESS, 0.asInstanceOf[AnyRef])
             }
         }}
+    def createBatchUserMapping(batchId:String,userId:String,batchData:CourseBatch,userName:String): java.util.Map[String, AnyRef]  =
+        new java.util.HashMap[String, AnyRef]() {
+            var courseName:String=null
+            if(batchId.equalsIgnoreCase(batchData.getBatchId)){
+                courseName=batchData.getName()
+            }
+
+            {
+                put(JsonKey.BATCH_ID, batchId)
+                put(JsonKey.USER_ID, userId)
+                put(JsonKey.STATUS, ProjectUtil.ProgressStatus.NOT_STARTED.getValue.asInstanceOf[AnyRef])
+                put(JsonKey.USER_NAME, userName)
+                put(JsonKey.NAME, courseName)
+                put(JsonKey.ENROLL_DATE, ProjectUtil.getTimeStamp)
+            }
+        }
+
+    def createCourseUserMapping(courseId: String, userId: String,batchData:CourseBatch,userName:String): java.util.Map[String, AnyRef] =
+        new java.util.HashMap[String, AnyRef]() {
+            var courseName: String = null
+            if (courseId.equalsIgnoreCase(batchData.getCourseId)) {
+                courseName = batchData.getName()
+            }
+            {
+                put(JsonKey.COURSE_ID, courseId)
+                put(JsonKey.USER_ID, userId)
+                put(JsonKey.STATUS, ProjectUtil.ProgressStatus.NOT_STARTED.getValue.asInstanceOf[AnyRef])
+                put(JsonKey.USER_NAME, userName)
+                put(JsonKey.NAME, courseName)
+                put(JsonKey.ENROLL_DATE, ProjectUtil.getTimeStamp)
+            }
+        }
 
     def notifyUser(userId: String, batchData: CourseBatch, operationType: String): Unit = {
         val isNotifyUser = java.lang.Boolean.parseBoolean(PropertiesCache.getInstance().getProperty(JsonKey.SUNBIRD_COURSE_BATCH_NOTIFICATIONS_ENABLED))

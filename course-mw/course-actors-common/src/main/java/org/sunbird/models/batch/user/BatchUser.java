@@ -4,30 +4,70 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Date;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BatchUser implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private String batchId;
+    private String batchid;
 
-    private List<String> userId;
+    private String userid;
+
+    private String username;
+
+    private String name;
+
+    private int status;
+
+    private Date enrollDate;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public Date getEnrollDate() {
+        return enrollDate;
+    }
+
+    public void setEnrollDate(Date enrollDate) {
+        this.enrollDate = enrollDate;
+    }
 
     public String getBatchId() {
-        return batchId;
+        return batchid;
     }
 
-    public void setBatchId(String batchId) {
-        this.batchId = batchId;
+    public void setBatchId(String batchid) {
+        this.batchid = batchid;
     }
 
-    public List<String> getUserId() {
-        return userId;
+    public String getUserId() {
+        return userid;
     }
 
-    public void setUserId(List<String> userId) {
-        this.userId = userId;
+    public void setUserId(String userId) {
+        this.userid = userid;
     }
 }

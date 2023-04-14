@@ -27,7 +27,7 @@ public class BatchUserDaoImpl implements BatchUserDao {
     public LoggerUtil logger = new LoggerUtil(this.getClass());
 
     @Override
-    public BatchUser read(RequestContext requestContext, String batchId, List<String> userId) {
+    public BatchUser read(RequestContext requestContext, String batchId, String userId) {
 
         Map<String, Object> primaryKey = new HashMap<>();
         primaryKey.put(JsonKey.BATCH_ID, batchId);

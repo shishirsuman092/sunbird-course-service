@@ -17,7 +17,7 @@ public interface BatchUserDao {
      * @param requestContext
      * @return User batch information
      */
-    BatchUser read(RequestContext requestContext, String batchId, List<String> userId);
+    BatchUser read(RequestContext requestContext, String batchId, String userId);
 
     /**
      * Create an entry for  user batch information

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Date;
 
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -12,25 +12,65 @@ import java.util.List;
 public class CourseUser implements Serializable {
 
   private static final long serialVersionUID = 1L;
-  private String courseId;
+  private String courseid;
 
-  private List<String> userId;
+  private String userid;
+
+  private String username;
+
+  private String name;
+
+  private int status;
+
+  private Date enrolledDate;
 
 
   public String getCourseId() {
-    return courseId;
+    return courseid;
   }
 
   public void setCourseId(String courseId) {
-    this.courseId = courseId;
+    this.courseid = courseid;
   }
 
 
-  public List<String> getUserId() {
-    return userId;
+  public String getUserId() {
+    return userid;
   }
 
-  public void setUserId(List<String> userId) {
-    this.userId = userId;
+  public void setUserId(String userid) {
+    this.userid = userid;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public int getStatus() {
+    return status;
+  }
+
+  public void setStatus(int status) {
+    this.status = status;
+  }
+
+  public Date getEnrolledDate() {
+    return enrolledDate;
+  }
+
+  public void setEnrolledDate(Date enrolledDate) {
+    this.enrolledDate = enrolledDate;
   }
 }

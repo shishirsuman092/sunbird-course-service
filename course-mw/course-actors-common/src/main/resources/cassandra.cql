@@ -560,3 +560,8 @@ ALTER TABLE sunbird.geo_location ADD userCountTTL text;
 // adding new column in client-info to save the channel
 ALTER TABLE sunbird.client_info ADD channel text;
 CREATE INDEX inx_ci_clientchannel ON sunbird.client_info(channel);
+
+// April 12th 2023
+CREATE TABLE IF NOT EXISTS sunbird.batch_user_mapping(batchId text,assessmentName text,enrollDate test,status int,userId list<text>,userName text,PRIMARY KEY (batchId));
+
+CREATE TABLE IF NOT EXISTS sunbird.course_user_mapping(courseId text,assessmentName text,enrollDate test,status int,userId list<text>,userName text,PRIMARY KEY (courseId));
