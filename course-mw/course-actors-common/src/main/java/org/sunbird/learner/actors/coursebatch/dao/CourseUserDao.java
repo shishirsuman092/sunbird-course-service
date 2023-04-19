@@ -1,7 +1,9 @@
 package org.sunbird.learner.actors.coursebatch.dao;
 
 import org.sunbird.common.models.response.Response;
+import org.sunbird.common.request.Request;
 import org.sunbird.common.request.RequestContext;
+import org.sunbird.models.batch.user.BatchUser;
 import org.sunbird.models.course.user.CourseUser;
 
 import java.util.List;
@@ -22,11 +24,11 @@ public interface CourseUserDao {
     /**
      * Get course user information.
      *
-     * @param courseId,userId course user identifiers
+     * @param courseId course user identifiers
      * @param requestContext
      * @return User courses information
      */
-    CourseUser read(RequestContext requestContext, String courseId, List<String> userId);
+    CourseUser readById(RequestContext requestContext, String courseId);
 
 
     /**
@@ -35,6 +37,15 @@ public interface CourseUserDao {
      * @param courseUserMap Course user information to be updated
      * @return Response containing status of courseUser update
      */
-    Response update(RequestContext requestContext, String courseId, String userId, Map<String, Object> courseUserMap);
+    Response update(RequestContext requestContext, String courseId, Map<String, Object> courseUserMap);
+
+    /**
+     * Get course user information.
+     *
+     *
+     * @param request
+     * @return User course information
+     */
+    List<Map<String, Object>> readCourseUsersList(Request request, String courseId);
 
 }

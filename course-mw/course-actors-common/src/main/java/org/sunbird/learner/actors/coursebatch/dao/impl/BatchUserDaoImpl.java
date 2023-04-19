@@ -7,12 +7,14 @@ import org.sunbird.common.CassandraUtil;
 import org.sunbird.common.models.response.Response;
 import org.sunbird.common.models.util.JsonKey;
 import org.sunbird.common.models.util.LoggerUtil;
+import org.sunbird.common.request.Request;
 import org.sunbird.common.request.RequestContext;
 import org.sunbird.helper.ServiceFactory;
 import org.sunbird.learner.actors.coursebatch.dao.BatchUserDao;
 import org.sunbird.learner.util.Util;
 import org.sunbird.models.batch.user.BatchUser;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +29,7 @@ public class BatchUserDaoImpl implements BatchUserDao {
     public LoggerUtil logger = new LoggerUtil(this.getClass());
 
     @Override
-    public BatchUser read(RequestContext requestContext, String batchId, String userId) {
+    public BatchUser readById(RequestContext requestContext, String batchId) {
 
         Map<String, Object> primaryKey = new HashMap<>();
         primaryKey.put(JsonKey.BATCH_ID, batchId);
@@ -45,6 +47,22 @@ public class BatchUserDaoImpl implements BatchUserDao {
         }
     }
 
+    public List<Map<String, Object>> readBatchUsersList(Request request, String batchId) {
+        Map<String, Object> filterMap = (Map<String, Object>) request.getRequest().getOrDefault(JsonKey.FILTERS,"");
+        Map<String, Object> filter = new HashMap<>();
+        filter.put(JsonKey.BATCH_ID,batchId);
+        filter.put(JsonKey.STATUS, filterMap.getOrDefault(JsonKey.STATUS,""));
+        Response response =
+                cassandraOperation.getRecordByIndexedPropertyPagination(batchUserDb.getKeySpace(), batchUserDb.getTableName(),filter,request);
+        List<Map<String, Object>> courseUserList =
+                (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+        if (CollectionUtils.isEmpty(courseUserList)) {
+            return null;
+        }
+        return courseUserList;
+
+    }
+
         @Override
         public Response insert (RequestContext requestContext, Map < String, Object > batchUserDetails){
             return cassandraOperation.insertRecord(requestContext, batchUserDb.getKeySpace(), batchUserDb.getTableName(), batchUserDetails);
@@ -57,7 +75,7 @@ public class BatchUserDaoImpl implements BatchUserDao {
      * @return Response containing status of batch user update
      */
     @Override
-    public Response update(RequestContext requestContext, String batchId,String userId, Map<String, Object> map) {
+    public Response update(RequestContext requestContext, String batchId, Map<String, Object> map) {
        logger.info(requestContext,"updating data based on batchId and return the response"+batchId);
         Map<String, Object> primaryKey = new HashMap<>();
         primaryKey.put(JsonKey.BATCH_ID, batchId);
