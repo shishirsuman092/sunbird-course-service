@@ -1,40 +1,39 @@
 package org.sunbird.enrolments
 
-import java.sql.Timestamp
-import java.text.{MessageFormat, SimpleDateFormat}
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId}
-import java.util
-import java.util.{Comparator, Date, HashMap, List, Map, Optional}
 import akka.actor.ActorRef
 import com.fasterxml.jackson.databind.ObjectMapper
-
-import javax.inject.{Inject, Named}
-import org.apache.commons.collections4.{CollectionUtils, MapUtils}
+import org.apache.commons.collections4.{CollectionUtils,MapUtils}
 import org.apache.commons.lang3.StringUtils
+import org.sunbird.cache.util.RedisCacheUtil
+import org.sunbird.common.CassandraUtil
 import org.sunbird.common.exception.ProjectCommonException
 import org.sunbird.common.models.response.Response
-import org.sunbird.common.models.util.ProjectUtil.{EnrolmentType, convertJsonStringToMap, isNotNull}
+import org.sunbird.common.models.util.ProjectUtil.{EnrolmentType, isNotNull}
 import org.sunbird.common.models.util._
 import org.sunbird.common.request.{Request, RequestContext}
 import org.sunbird.common.responsecode.ResponseCode
 import org.sunbird.learner.actors.coursebatch.dao.impl.{BatchUserDaoImpl, CourseBatchDaoImpl, CourseUserDaoImpl, UserCoursesDaoImpl}
 import org.sunbird.learner.actors.coursebatch.dao.{BatchUserDao, CourseBatchDao, CourseUserDao, UserCoursesDao}
-import org.sunbird.learner.actors.group.dao.impl.GroupDaoImpl
-import org.sunbird.learner.util.{ContentSearchUtil, ContentUtil, CourseBatchSchedulerUtil, JsonUtil, Util}
-import org.sunbird.models.course.batch.CourseBatch
-import org.sunbird.models.user.courses.UserCourses
-import org.sunbird.cache.util.RedisCacheUtil
-import org.sunbird.common.CassandraUtil
-import org.sunbird.common.models.util.ProjectUtil
 import org.sunbird.learner.actors.coursebatch.service.UserCoursesService
+import org.sunbird.learner.actors.group.dao.impl.GroupDaoImpl
+import org.sunbird.learner.util._
 import org.sunbird.models.batch.user.BatchUser
+import org.sunbird.models.course.batch.CourseBatch
 import org.sunbird.models.course.user.CourseUser
+import org.sunbird.models.user.courses.UserCourses
 import org.sunbird.telemetry.util.TelemetryUtil
 import org.sunbird.userorg.{UserOrgService, UserOrgServiceImpl}
 
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.util
+import java.util.{Date, Optional}
+import javax.inject.{Inject, Named}
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
+
 
 class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") courseBatchNotificationActorRef: ActorRef
                                     )(implicit val cacheUtil: RedisCacheUtil) extends BaseEnrolmentActor {
@@ -81,6 +80,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             case "unenrol" => unEnroll(request)
             case "multiUserUnenrol" => bulkUnEnroll(request)
             case "listEnrol" => list(request)
+            case "courseBatchUserList" => courseBatchUserList(request)
             case "evaluationListEnrol" => evaluationList(request)
             case "courseEval" => courseEval(request)
             case "notIssueCertificate" => notIssueCertificate(request)
@@ -114,7 +114,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
     logger.info(request.getRequestContext, "enrollmentData for enrol - " + enrolmentData)
     validateEnrolment(batchData, enrolmentData, true)
-    val data: util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
+    val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
     logger.info(request.getRequestContext, "Data for enrol - " + data)
     upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
     addCourseUserBatchData(request, courseId, batchId, batchData, userId)
@@ -183,6 +183,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         throw e
     }
   }
+
+
 
   def getCourseList(request: Request): Response = {
     logger.info(request.getRequestContext, "Inside the getCourseList")
@@ -425,6 +427,17 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     }
 
+  }
+
+  def courseBatchUserList(request: Request): Unit = {
+    val courseId = request.get(JsonKey.COURSE_ID).asInstanceOf[String]
+    val batchId = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
+    val userList: util.List[util.Map[String, AnyRef]] = courseUserDao.readCourseUsersList(request, courseId)
+    val batchList: util.List[util.Map[String, AnyRef]] = batchUserDao.readBatchUsersList(request, batchId)
+    val courseBatchUserList:util.List[util.List[util.Map[String, AnyRef]]]=null
+    courseBatchUserList.add(userList)
+    courseBatchUserList.add(batchList)
+    sender().tell(successResponse(), self)
   }
 
   def upsertCourseBatchUser(userId: String, batchId: String, dataBatch: java.util.Map[String, AnyRef], courseId: String, dataCourse: java.util.Map[String, AnyRef], isNew: Boolean, requestContext: RequestContext): Unit = {
