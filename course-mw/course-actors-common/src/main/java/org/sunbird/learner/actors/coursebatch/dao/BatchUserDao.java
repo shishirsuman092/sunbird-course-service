@@ -29,7 +29,7 @@ public interface BatchUserDao {
      * @param request batchId
      * @return User batch information
      */
-    List<Map<String, Object>> readBatchUsersList(Request request, String courseId);
+    List<Map<String, Object>> readBatchUsersList(Request request, String batchId);
     /**
      * Update batch user.
      *

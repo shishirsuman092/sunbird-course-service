@@ -17,9 +17,8 @@ import org.sunbird.models.batch.user.BatchUser;
 import org.sunbird.models.course.user.CourseUser;
 
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 
 public class CourseUserDaoImpl implements CourseUserDao {
 
@@ -93,6 +92,7 @@ public class CourseUserDaoImpl implements CourseUserDao {
         Map<String, Object> filter = new HashMap<>();
         filter.put(JsonKey.COURSE_ID,courseId);
         filter.put(JsonKey.STATUS, filterMap.getOrDefault(JsonKey.STATUS,""));
+        filter.put(JsonKey.NAME,filterMap.getOrDefault(JsonKey.SEARCH,""));
         Response response =
                 cassandraOperation.getRecordByIndexedPropertyPagination(courseUserDb.getKeySpace(), courseUserDb.getTableName(),filter,request);
         List<Map<String, Object>> courseUserList =

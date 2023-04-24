@@ -595,7 +595,21 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
           if(value!=""){
             if (value instanceof List) {
               if(((List) value).size()>0)
-              where = where.and(QueryBuilder.in(filter.getKey(), ((List) filter.getValue())));
+                if(filter.getKey().equalsIgnoreCase(JsonKey.STATUS)) {
+                  List<Integer> statusList = (List) value;
+                  if(statusList.size() > 1) {
+                    where = where.and(QueryBuilder.gte(filter.getKey(), statusList.get(0)));
+                    where = where.and(QueryBuilder.lte(filter.getKey(), statusList.get(statusList.size()-1)));
+                  } else {
+                    where = where.and(QueryBuilder.in(filter.getKey(), ((List) filter.getValue())));
+                  }
+                } else {
+                  where = where.and(QueryBuilder.in(filter.getKey(), ((List) filter.getValue())));
+                }
+              if (filter.getKey().equalsIgnoreCase(JsonKey.NAME)) {
+                String option=value.toString();
+                where=where.and(QueryBuilder.like(JsonKey.NAME,option));
+              }
             } else {
               where = where.and(QueryBuilder.eq(filter.getKey(), filter.getValue()));
             }
@@ -606,7 +620,10 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
         selectQuery.orderBy(QueryBuilder.desc(JsonKey.ENROLL_DATE));
       if(sortMap.getOrDefault(JsonKey.ENROLL_DATE,"").equals("asc"))
         selectQuery.orderBy(QueryBuilder.asc(JsonKey.ENROLL_DATE));*/
-      selectQuery.limit((Integer) request.getOrDefault(JsonKey.LIMIT,""));
+      Integer limit=(Integer) request.getOrDefault(JsonKey.LIMIT,0);
+      if(limit != null && limit > 0){
+        selectQuery.limit(limit);
+      }
       selectQuery.allowFiltering();
       logger.debug(request.getRequestContext(), "CassandraOperationImpl:getRecordsByIndexedProperty query  " + selectQuery.toString());
       if (null != selectQuery) logger.debug(request.getRequestContext(), selectQuery.getQueryString());
