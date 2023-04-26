@@ -517,8 +517,9 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
          val userIds: util.List[String] = request.get(JsonKey.USER_IDs).asInstanceOf[util.List[String]]
          val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
          val comment: String = request.getOrDefault(JsonKey.COMMENT, "").asInstanceOf[String]
+         val statusCode: Integer = request.getOrDefault(JsonKey.STATUS, 0).asInstanceOf[Integer]
          // creating request map
-         val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(comment, Integer.valueOf(3))
+         val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(comment,statusCode)
          // creating cassandra column map
          val data = CassandraUtil.changeCassandraColumnMapping(map)
          // collecting response
