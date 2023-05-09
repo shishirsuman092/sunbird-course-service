@@ -1,12 +1,6 @@
 package org.sunbird.cassandraimpl;
 
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.WriteType;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.datastax.driver.core.exceptions.WriteTimeoutException;
 import com.datastax.driver.core.exceptions.QueryExecutionException;
@@ -17,10 +11,7 @@ import com.datastax.driver.core.querybuilder.Select.Where;
 import com.datastax.driver.core.querybuilder.Update.Assignments;
 import com.google.common.util.concurrent.FutureCallback;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -594,18 +585,9 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
           Object value = filter.getValue();
           if(value!=""){
             if (value instanceof List) {
-              if(((List) value).size()>0)
-                if(filter.getKey().equalsIgnoreCase(JsonKey.STATUS)) {
-                  List<Integer> statusList = (List) value;
-                  if(statusList.size() > 1) {
-                    where = where.and(QueryBuilder.gte(filter.getKey(), statusList.get(0)));
-                    where = where.and(QueryBuilder.lte(filter.getKey(), statusList.get(statusList.size()-1)));
-                  } else {
-                    where = where.and(QueryBuilder.in(filter.getKey(), ((List) filter.getValue())));
-                  }
-                } else {
-                  where = where.and(QueryBuilder.in(filter.getKey(), ((List) filter.getValue())));
-                }
+              if(((List) value).size()>0) {
+                where = createQueryForList(request, where, filter);
+              }
               if (filter.getKey().equalsIgnoreCase(JsonKey.NAME)) {
                 String option=value.toString();
                 where=where.and(QueryBuilder.like(JsonKey.NAME,option));
@@ -629,6 +611,7 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
       if (null != selectQuery) logger.debug(request.getRequestContext(), selectQuery.getQueryString());
       ResultSet results =
               connectionManager.getSession(keyspaceName).execute(selectQuery.allowFiltering());
+      logger.debug(request.getRequestContext(), "CassandraOperationImpl:getRecordsByIndexedProperty query  " + results.getExecutionInfo().getPagingState());
       response = CassandraUtil.createResponse(results);
     } catch (Exception e) {
       logger.error(request.getRequestContext(),
@@ -645,6 +628,23 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     }
     logQueryElapseTime("getRecordsByIndexedProperty", startTime);
     return response;
+  }
+
+  private Where createQueryForList(Request request, Where where, Entry<String, Object> filter) {
+    if(filter.getKey().equals(JsonKey.STATUS)) {
+      List<String> list = (List) filter.getValue();
+      Collections.sort(list);
+      logger.debug(request.getRequestContext(),"Sorted list for status :"+list);
+      if(list.size()>1) {
+        where = where.and(QueryBuilder.gte(filter.getKey(), list.get(0)));
+        where = where.and(QueryBuilder.lte(filter.getKey(), list.get(list.size() - 1)));
+      }else{
+        where = where.and(QueryBuilder.eq(filter.getKey(), list.get(0)));
+      }
+    }else {
+      where = where.and(QueryBuilder.in(filter.getKey(), ((List) filter.getValue())));
+    }
+    return where;
   }
 
   @Override
