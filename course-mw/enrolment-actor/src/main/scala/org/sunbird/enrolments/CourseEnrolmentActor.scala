@@ -403,7 +403,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     val courseUserData: CourseUser = courseUserDao.readById(request.getRequestContext, courseId)
     val batchUserData: BatchUser = batchUserDao.readById(request.getRequestContext, batchId)
     logger.info(request.getRequestContext, "fetching the userData from the sunbird.user table base on userId" + userId + "auth token")
-     val userData: util.Map[String, AnyRef] = userOrgService.getUserById(userId, request.getContext().get(JsonKey.AUTH_TOKEN).toString)
+    val userData: util.Map[String, AnyRef] = userOrgService.getUserById(userId, request.getContext.getOrDefault(JsonKey.X_AUTH_TOKEN, "").asInstanceOf[String])
     var userName: String = null
     logger.info(request.getRequestContext, "checking the condition if userId is exist fetch the firstname and lastname from userData")
     if (userId.equalsIgnoreCase(userData.get(JsonKey.USER_ID).toString)) {

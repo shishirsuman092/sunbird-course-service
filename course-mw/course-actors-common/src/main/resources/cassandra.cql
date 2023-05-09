@@ -562,6 +562,6 @@ ALTER TABLE sunbird.client_info ADD channel text;
 CREATE INDEX inx_ci_clientchannel ON sunbird.client_info(channel);
 
 // April 12th 2023
-CREATE TABLE IF NOT EXISTS sunbird_courses.batch_user_mapping(batchid text,name text,enrolled_date timestemp,status int,userid text,username text,PRIMARY KEY (batchid));
+CREATE TABLE IF NOT EXISTS sunbird_courses.batch_user_mapping(batchid text,name text,enrolled_date timestamp,status int,userid text,username text,PRIMARY KEY (batchid, name, enrolled_date, status, userid, username));
 
-CREATE TABLE IF NOT EXISTS sunbird_courses.course_user_mapping(courseid text,name text,enrolled_date timestemp,status int,userid text,username text,PRIMARY KEY (courseid));
+CREATE TABLE IF NOT EXISTS sunbird_courses.course_user_mapping(courseid text,name text,enrolled_date timestamp,status int,userid text,username text,PRIMARY KEY (courseid, name, enrolled_date, status, userid, username));
