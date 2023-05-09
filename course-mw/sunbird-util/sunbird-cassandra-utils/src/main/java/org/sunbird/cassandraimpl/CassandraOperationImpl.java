@@ -588,14 +588,24 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
               if(((List) value).size()>0) {
                 where = createQueryForList(request, where, filter);
               }
+              if (filter.getKey().equalsIgnoreCase(JsonKey.NAME)) {
+                String option=value.toString();
+                where=where.and(QueryBuilder.like(JsonKey.NAME,option));
+              }
             } else {
               where = where.and(QueryBuilder.eq(filter.getKey(), filter.getValue()));
             }
           }
         }
       }
-      //selectQuery.limit((Integer) request.getOrDefault(JsonKey.LIMIT,""));
-      //selectQuery.setFetchSize((Integer) request.getOrDefault(JsonKey.LIMIT,100));
+      /*if(sortMap.getOrDefault(JsonKey.ENROLL_DATE,"").equals("desc"))
+        selectQuery.orderBy(QueryBuilder.desc(JsonKey.ENROLL_DATE));
+      if(sortMap.getOrDefault(JsonKey.ENROLL_DATE,"").equals("asc"))
+        selectQuery.orderBy(QueryBuilder.asc(JsonKey.ENROLL_DATE));*/
+      Integer limit=(Integer) request.getOrDefault(JsonKey.LIMIT,0);
+      if(limit != null && limit > 0){
+        selectQuery.limit(limit);
+      }
       selectQuery.allowFiltering();
       logger.debug(request.getRequestContext(), "CassandraOperationImpl:getRecordsByIndexedProperty query  " + selectQuery.toString());
       if (null != selectQuery) logger.debug(request.getRequestContext(), selectQuery.getQueryString());

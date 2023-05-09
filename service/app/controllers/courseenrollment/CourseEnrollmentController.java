@@ -192,6 +192,19 @@ public class CourseEnrollmentController extends BaseController {
             httpRequest);
     }
 
+    public CompletionStage<Result> courseUserList(Http.Request httpRequest){
+        return handleRequest(
+                courseEnrolmentActor, "courseBatchUserList",
+                httpRequest.body().asJson(),
+                (req)->{
+                    Request request = (Request) req;
+                    request.getContext().put(JsonKey.COURSE_ID, request.get(JsonKey.COURSE_ID));
+                    return null;
+                },
+                getAllRequestHeaders((httpRequest)),
+                httpRequest);
+
+    }
     public CompletionStage<Result> adminGetUserEnrolledCourses(Http.Request httpRequest) {
         return handleRequest(
                 courseEnrolmentActor, "listEnrol",
