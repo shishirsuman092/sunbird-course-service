@@ -411,9 +411,9 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
       var lastname = userData.get(JsonKey.LAST_NAME).toString
       userName = firstname.concat(" ").concat(lastname)
     }
-
-    val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchData, userName)
-    val dataCourse: util.Map[String, AnyRef] = createCourseUserMapping(courseId, userId, batchData, userName)
+    val comment: String = request.getOrDefault(JsonKey.COMMENT, "").asInstanceOf[String]
+    val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchData, userName, comment)
+    val dataCourse: util.Map[String, AnyRef] = createCourseUserMapping(courseId, userId, batchData, userName, comment)
     upsertCourseBatchUser(userId, batchId, dataBatch, courseId, dataCourse, (null == courseUserData || null == batchUserData), request.getRequestContext)
   }
 
@@ -471,7 +471,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
       }
     }
 
-  def createBatchUserMapping(batchId: String, userId: String, batchData: CourseBatch, userName: String): java.util.Map[String, AnyRef] =
+  def createBatchUserMapping(batchId: String, userId: String, batchData: CourseBatch, userName: String, comment: String): java.util.Map[String, AnyRef] =
     new java.util.HashMap[String, AnyRef]() {
       var courseName: String = null
       if (batchId.equalsIgnoreCase(batchData.getBatchId)) {
@@ -485,12 +485,11 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         put(JsonKey.NAME, courseName)
         put(JsonKey.ENROLL_DATE, ProjectUtil.getTimeStamp)
         put(JsonKey.STATUS, ProjectUtil.ProgressStatus.NOT_STARTED.getValue.asInstanceOf[AnyRef])
-
-
+        put(JsonKey.COMMENT, comment)
       }
     }
 
-  def createCourseUserMapping(courseId: String, userId: String, batchData: CourseBatch, userName: String): java.util.Map[String, AnyRef] =
+  def createCourseUserMapping(courseId: String, userId: String, batchData: CourseBatch, userName: String, comment: String): java.util.Map[String, AnyRef] =
     new java.util.HashMap[String, AnyRef]() {
       var courseName: String = null
       if (courseId.equalsIgnoreCase(batchData.getCourseId)) {
@@ -503,8 +502,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         put(JsonKey.NAME, courseName)
         put(JsonKey.ENROLL_DATE, ProjectUtil.getTimeStamp)
         put(JsonKey.STATUS, ProjectUtil.ProgressStatus.NOT_STARTED.getValue.asInstanceOf[AnyRef])
-
-
+        put(JsonKey.COMMENT, comment)
       }
     }
 
@@ -643,7 +641,9 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
          val data = CassandraUtil.changeCassandraColumnMapping(map)
          // collecting response
          (0 until(userIds.size())).foreach(x => {
-             userCoursesDao.updateV2(request.getRequestContext, userIds.get(x.toInt), courseId, batchId, data)
+           userCoursesDao.updateV2(request.getRequestContext, userIds.get(x.toInt), courseId, batchId, data)
+           val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
+           addCourseUserBatchData(request, courseId, batchId, batchData, userIds.get(x.toInt))
          })
          sender().tell(successResponse(), self)
     }
@@ -661,7 +661,9 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val data = CassandraUtil.changeCassandraColumnMapping(map)
         // collecting response
         (0 until (userIds.size())).foreach(x => {
-            userCoursesDao.updateV2(request.getRequestContext, userIds.get(x.toInt), courseId, batchId, data)
+          userCoursesDao.updateV2(request.getRequestContext, userIds.get(x.toInt), courseId, batchId, data)
+          val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
+          addCourseUserBatchData(request, courseId, batchId, batchData, userIds.get(x.toInt))
         })
         sender().tell(successResponse(), self)
     }
