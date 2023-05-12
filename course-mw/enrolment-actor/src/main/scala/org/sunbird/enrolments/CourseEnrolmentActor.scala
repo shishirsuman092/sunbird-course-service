@@ -408,8 +408,10 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     logger.info(request.getRequestContext, "checking the condition if userId is exist fetch the firstname and lastname from userData")
     if (userId.equalsIgnoreCase(userData.get(JsonKey.USER_ID).toString)) {
       var firstname = userData.get(JsonKey.FIRST_NAME).toString
-      var lastname = userData.get(JsonKey.LAST_NAME).toString
-      userName = firstname.concat(" ").concat(lastname)
+      var lastname = userData.getOrDefault(JsonKey.LAST_NAME,"").toString
+      if(!lastname.isBlank) {
+        userName = firstname.concat(" ").concat(lastname)
+      }
     }
     val comment: String = request.getOrDefault(JsonKey.COMMENT, "").asInstanceOf[String]
     val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchData, userName, comment)
@@ -436,8 +438,12 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     val batchList: util.List[util.Map[String, AnyRef]] = batchUserDao.readBatchUsersList(request, batchId)
     val courseBatchUserList:util.List[util.List[util.Map[String, AnyRef]]]=new java.util.ArrayList[java.util.List[java.util.Map[String, AnyRef]]]()
     courseBatchUserList.add(userList)
-    courseBatchUserList.add(batchList)
-    sender().tell(successResponse(), self)
+    //courseBatchUserList.add(batchList)
+    // assuming the batch id belongs to the same course
+    //val userMap:util.List[util.List[util.Map[String, AnyRef]]]=new java.util.ArrayList[java.util.List[java.util.Map[String, AnyRef]]]();
+    val response = new Response
+    response.getResult.put(JsonKey.RESPONSE, courseBatchUserList)
+    sender().tell(response, self)
   }
 
   def upsertCourseBatchUser(userId: String, batchId: String, dataBatch: java.util.Map[String, AnyRef], courseId: String, dataCourse: java.util.Map[String, AnyRef], isNew: Boolean, requestContext: RequestContext): Unit = {
