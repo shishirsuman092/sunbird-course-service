@@ -117,7 +117,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
     logger.info(request.getRequestContext, "Data for enrol - " + data)
     upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
-    addCourseUserBatchData(request, courseId, batchId, batchData, userId)
+    //addCourseUserBatchData(request, courseId, batchId, batchData, userId)
     logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
     cacheUtil.delete(getCacheKey(userId))
     //sender().tell(successResponse(), self)
@@ -648,8 +648,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
          // collecting response
          (0 until(userIds.size())).foreach(x => {
            userCoursesDao.updateV2(request.getRequestContext, userIds.get(x.toInt), courseId, batchId, data)
-           val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
-           addCourseUserBatchData(request, courseId, batchId, batchData, userIds.get(x.toInt))
+           //val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
+           //addCourseUserBatchData(request, courseId, batchId, batchData, userIds.get(x.toInt))
          })
          sender().tell(successResponse(), self)
     }
@@ -668,8 +668,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         // collecting response
         (0 until (userIds.size())).foreach(x => {
           userCoursesDao.updateV2(request.getRequestContext, userIds.get(x.toInt), courseId, batchId, data)
-          val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
-          addCourseUserBatchData(request, courseId, batchId, batchData, userIds.get(x.toInt))
+          //val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
+          //addCourseUserBatchData(request, courseId, batchId, batchData, userIds.get(x.toInt))
         })
         sender().tell(successResponse(), self)
     }
