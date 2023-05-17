@@ -153,10 +153,10 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     if (CollectionUtils.isEmpty(userCoursesList)) {
       return null;
     }
-    return userCoursesList
-            .stream()
+    return userCoursesList;
+          /*  .stream()
             .filter(userCourse -> (active == (boolean) userCourse.get(JsonKey.ACTIVE)))
-            .collect(Collectors.toList());
+            .collect(Collectors.toList());*/
   }
 
   @Override
