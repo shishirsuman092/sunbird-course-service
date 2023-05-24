@@ -282,7 +282,7 @@ progress is no of content completed
 */
 CREATE TABLE IF NOT EXISTS sunbird.user_courses(id text, courseId text, courseName text, userId text, batchId text, enrolledDate text,
 description text,tocUrl text,status int,active boolean,delta text,grade text,progress int,lastReadContentId text,
-lastReadContentStatus int,addedBy text,courseLogoUrl text, dateTime timestamp, contentId text, PRIMARY KEY (id));
+lastReadContentStatus int,addedBy text,courseLogoUrl text, dateTime timestamp, contentId text,comment map<text,text>, PRIMARY KEY (id));
 
 CREATE INDEX inx_ucs_userId ON sunbird.user_courses (userId);
 CREATE INDEX inx_ucs_courseId ON sunbird.user_courses (courseId);

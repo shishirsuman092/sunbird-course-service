@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -24,7 +25,7 @@ public class UserCourses implements Serializable {
   private int progress;
   private int status;
   private String userId;
-  private String comment;
+  private Map<String,String> comment;
 
   public boolean isActive() {
     return active;
@@ -138,11 +139,11 @@ public class UserCourses implements Serializable {
     this.userId = userId;
   }
 
-  public String getComment() {
+  public Map<String, String> getComment() {
     return comment;
   }
 
-  public void setComment(String comment) {
+  public void setComment(Map<String, String> comment) {
     this.comment = comment;
   }
 }
