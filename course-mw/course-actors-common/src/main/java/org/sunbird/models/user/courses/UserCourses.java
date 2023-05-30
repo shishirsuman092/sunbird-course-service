@@ -25,8 +25,8 @@ public class UserCourses implements Serializable {
   private int progress;
   private int status;
   private String userId;
-  private Map<String,String> comment;
 
+  private Map<String,String> comment;
   public boolean isActive() {
     return active;
   }
@@ -131,6 +131,14 @@ public class UserCourses implements Serializable {
     this.status = status;
   }
 
+  public Map<String, String> getComment() {
+    return comment;
+  }
+
+  public void setComment(Map<String, String> comment) {
+    this.comment = comment;
+  }
+
   public String getUserId() {
     return userId;
   }
@@ -139,11 +147,5 @@ public class UserCourses implements Serializable {
     this.userId = userId;
   }
 
-  public Map<String, String> getComment() {
-    return comment;
-  }
 
-  public void setComment(Map<String, String> comment) {
-    this.comment = comment;
-  }
 }
