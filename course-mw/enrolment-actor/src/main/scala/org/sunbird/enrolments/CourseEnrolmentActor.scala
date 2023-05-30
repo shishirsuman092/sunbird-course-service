@@ -55,7 +55,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     (ProjectUtil.getConfigValue("user_enrolments_response_cache_ttl")).toInt else 60
   private val DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd")
 
-  val feedback: Map[String,String] =null;
+
   override def preStart {
     println("Starting CourseEnrolmentActor")
   }
@@ -641,10 +641,11 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
          val userIds: util.List[String] = request.get(JsonKey.USER_IDs).asInstanceOf[util.List[String]]
          val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
          val comment: String = request.getOrDefault(JsonKey.COMMENT, "").asInstanceOf[String]
-         feedback.put(request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String],comment)
          val statusCode: Integer = request.getOrDefault(JsonKey.STATUS, 0).asInstanceOf[Integer]
+         val nodalFeedback:util.Map[String,String]=new util.HashMap[String,String]()
+         nodalFeedback.put(request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String],comment)
          // creating request map
-         val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(feedback,statusCode)
+         val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(nodalFeedback,statusCode)
          // creating cassandra column map
          val data = CassandraUtil.changeCassandraColumnMapping(map)
          // collecting response
@@ -663,13 +664,14 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
         val comment: String = request.getOrDefault(JsonKey.COMMENT, "").asInstanceOf[String]
         val statusCode: Integer = request.getOrDefault(JsonKey.STATUS, 0).asInstanceOf[Integer]
-      feedback.put(request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String],comment)
-        // creating request map
-        val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(feedback, statusCode)
-        // creating cassandra column map
-        val data = CassandraUtil.changeCassandraColumnMapping(map)
         // collecting response
         (0 until (userIds.size())).foreach(x => {
+          val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userIds.get(x.toInt), courseId, batchId)
+          enrolmentData.getComment.put(request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String], comment)
+          // creating request map
+          val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(enrolmentData.getComment, statusCode)
+          // creating cassandra column map
+          val data = CassandraUtil.changeCassandraColumnMapping(map)
           userCoursesDao.updateV2(request.getRequestContext, userIds.get(x.toInt), courseId, batchId, data)
           //val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
           //addCourseUserBatchData(request, courseId, batchId, batchData, userIds.get(x.toInt))
@@ -677,7 +679,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         sender().tell(successResponse(), self)
     }
 
-  private def createCourseEvalRequestMap(comment: Map[String,String], statusCode: Integer) = {
+  private def createCourseEvalRequestMap(comment: util.Map[String,String], statusCode: Integer) = {
     val map = new util.HashMap[String, Object]()
     map.put(JsonKey.STATUS, statusCode.asInstanceOf[AnyRef])
     map.put(JsonKey.COMMENT, comment.asInstanceOf[util.Map[String, String]])
