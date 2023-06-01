@@ -78,6 +78,10 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
             logger.info(requestContext, "Final content-consumption data: " + finalContentList)
             // Update consumption first and then push the assessment events if there are any. This will help us handling failures of max attempts (for assessment content).
             val contentConsumptionResponse = processContents(finalContentList, requestContext, requestBy, requestedFor)
+            val assessEvents = request.get(JsonKey.EVALUABLE_FLAG_TAG).asInstanceOf[String] match {
+                case "true" => populateAssessmentScore(request.get(JsonKey.ASSESS_REQ_BDY).asInstanceOf[String])
+                case _ => assessmentEvents
+            }
             val assessmentResponse = processAssessments(assessmentEvents, requestContext, requestBy, requestedFor)
             val finalResponse = assessmentResponse.getOrElse(new Response())
             finalResponse.putAll(contentConsumptionResponse.getOrElse(new Response()).getResult)
@@ -453,5 +457,13 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
             val topic = ProjectUtil.getConfigValue("kafka_enrolment_sync_topic")
             KafkaClient.send(userId, event, topic)
         }
+    }
+    def populateAssessmentScore(body: String): util.List[util.Map[String, AnyRef]] = {
+        val inquiryBaseURL = ProjectUtil.getConfigValue(JsonKey.INQUIRY_BASE_URL)
+        val updRes = HttpUtil.doPostRequest(inquiryBaseURL + PropertiesCache.getInstance.getProperty(JsonKey.INQUIRY_ASSESS_SCORE_URL), body, Map[String, String]("Content-Type" -> "application/json"))
+        if (200 != updRes.getStatusCode) ProjectCommonException.throwClientErrorException(ResponseCode.CLIENT_ERROR);
+        JsonUtil.deserialize(updRes.getBody, classOf[Response])
+          .getResult.getOrDefault("questions", new util.HashMap()).asInstanceOf[java.util.Map[String, AnyRef]]
+          .getOrDefault("assessments", new util.ArrayList[util.HashMap[String, AnyRef]]()).asInstanceOf[util.List[java.util.Map[String, AnyRef]]]
     }
 }
