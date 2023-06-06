@@ -2,8 +2,8 @@ package org.sunbird.enrolments
 
 import java.util
 import java.util.{Date, TimeZone, UUID}
-
 import com.fasterxml.jackson.databind.ObjectMapper
+
 import javax.inject.Inject
 import org.apache.commons.collections4.{CollectionUtils, MapUtils}
 import org.apache.commons.lang3.StringUtils
@@ -17,6 +17,7 @@ import org.sunbird.common.responsecode.ResponseCode
 import org.sunbird.common.util.JsonUtil
 import org.sunbird.helper.ServiceFactory
 import org.sunbird.kafka.client.{InstructionEventGenerator, KafkaClient}
+import org.sunbird.keys.SunbirdKey
 import org.sunbird.learner.constants.{CourseJsonKey, InstructionEvent}
 import org.sunbird.learner.util.Util
 
@@ -82,7 +83,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                 case "true" => populateAssessmentScore(request.get(JsonKey.ASSESS_REQ_BDY).asInstanceOf[String])
                 case _ => assessmentEvents
             }
-            val assessmentResponse = processAssessments(assessmentEvents, requestContext, requestBy, requestedFor)
+            val assessmentResponse = processAssessments(assessEvents, requestContext, requestBy, requestedFor)
             val finalResponse = assessmentResponse.getOrElse(new Response())
             finalResponse.putAll(contentConsumptionResponse.getOrElse(new Response()).getResult)
             sender().tell(finalResponse, self)
@@ -458,12 +459,12 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
             KafkaClient.send(userId, event, topic)
         }
     }
-    def populateAssessmentScore(body: String): util.List[util.Map[String, AnyRef]] = {
+    private def populateAssessmentScore(body: String): util.List[util.Map[String, AnyRef]] = {
         val inquiryBaseURL = ProjectUtil.getConfigValue(JsonKey.INQUIRY_BASE_URL)
-        val updRes = HttpUtil.doPostRequest(inquiryBaseURL + PropertiesCache.getInstance.getProperty(JsonKey.INQUIRY_ASSESS_SCORE_URL), body, Map[String, String]("Content-Type" -> "application/json"))
-        if (200 != updRes.getStatusCode) ProjectCommonException.throwClientErrorException(ResponseCode.CLIENT_ERROR);
+        val updRes = HttpUtil.doPostRequest(inquiryBaseURL + PropertiesCache.getInstance.getProperty(JsonKey.INQUIRY_ASSESS_SCORE_URL), body, Map[String, String](SunbirdKey.CONTENT_TYPE_HEADER  -> SunbirdKey.APPLICATION_JSON))
+        if (200 != updRes.getStatusCode) ProjectCommonException.throwClientErrorException(ResponseCode.unAuthorized, ProjectUtil.formatMessage(ResponseCode.unAuthorized.getErrorMessage, ""));
         JsonUtil.deserialize(updRes.getBody, classOf[Response])
-          .getResult.getOrDefault("questions", new util.HashMap()).asInstanceOf[java.util.Map[String, AnyRef]]
-          .getOrDefault("assessments", new util.ArrayList[util.HashMap[String, AnyRef]]()).asInstanceOf[util.List[java.util.Map[String, AnyRef]]]
+          .getResult.getOrDefault(JsonKey.QUESTIONS, new util.HashMap()).asInstanceOf[java.util.Map[String, AnyRef]]
+          .getOrDefault(JsonKey.ASSESSMENTS, new util.ArrayList[util.HashMap[String, AnyRef]]()).asInstanceOf[util.List[java.util.Map[String, AnyRef]]]
     }
 }
