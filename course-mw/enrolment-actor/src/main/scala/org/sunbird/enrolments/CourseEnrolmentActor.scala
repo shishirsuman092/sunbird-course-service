@@ -467,7 +467,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         put(JsonKey.COURSE_ID, courseId)
         put(JsonKey.BATCH_ID, batchId)
         put(JsonKey.ACTIVE, ProjectUtil.ActiveStatus.ACTIVE.getValue.asInstanceOf[AnyRef])
-        put(JsonKey.COMMENT, "".asInstanceOf[AnyRef])
+        put(JsonKey.COMMENT, null)
         if (null == enrolmentData) {
           put(JsonKey.ADDED_BY, requestedBy)
           put(JsonKey.COURSE_ENROLL_DATE, ProjectUtil.getTimeStamp)
@@ -669,12 +669,12 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
           val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userIds.get(x.toInt), courseId, batchId)
           if(enrolmentData.getComment!=null) {
             enrolmentData.getComment.put(request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String], comment)
-          }// creating request map
+            // creating request map
             val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(enrolmentData.getComment, statusCode)
             // creating cassandra column map
             val data = CassandraUtil.changeCassandraColumnMapping(map)
             userCoursesDao.updateV2(request.getRequestContext, userIds.get(x.toInt), courseId, batchId, data)
-
+          }
         })
         sender().tell(successResponse(), self)
     }
