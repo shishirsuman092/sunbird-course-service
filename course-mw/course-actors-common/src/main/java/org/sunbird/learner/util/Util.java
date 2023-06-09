@@ -65,7 +65,6 @@ public final class Util {
     dbInfoMap.put(JsonKey.COURSE_USER_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "course_user_mapping"));
     dbInfoMap.put(JsonKey.CLIENT_INFO_DB, getDbInfoObject(KEY_SPACE_NAME, "client_info"));
     dbInfoMap.put(JsonKey.USER_AUTH_DB, getDbInfoObject(KEY_SPACE_NAME, "user_auth"));
-    dbInfoMap.put(JsonKey.USER_ROLES_DB, getDbInfoObject(KEY_SPACE_NAME, "user_roles"));
     dbInfoMap.put(
         JsonKey.SUNBIRD_COURSE_DIALCODES_DB,
         getDbInfoObject(DIALCODE_KEY_SPACE_NAME, "dialcode_images"));

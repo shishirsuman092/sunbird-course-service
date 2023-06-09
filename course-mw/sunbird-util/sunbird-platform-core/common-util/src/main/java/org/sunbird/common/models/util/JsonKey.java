@@ -347,10 +347,10 @@ public final class JsonKey {
   public static final String NOT_EXISTS = "not_exists";
   public static final String NOTE = "note";
   public static final String NOTE_ID = "noteId";
-  public static final String NODAL_OFFICER= "NODAL_OFFICER";
-  public static final String ORG_ADMIN="ORG_ADMIN";
   public static final String NOTIFICATION = "notification";
   public static final String NULL = "null";
+  public static final String NODAL_OFFICER= "NODAL_OFFICER";
+  public static final String ORG_ADMIN="ORG_ADMIN";
   public static final String OBJECT_ID = "objectId";
   public static final String OBJECT_IDS = "objectIds";
   public static final String OBJECT_TYPE = "objectType";

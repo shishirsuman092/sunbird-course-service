@@ -24,8 +24,8 @@ public class UserCourses implements Serializable {
   private int lastReadContentStatus;
   private int progress;
   private int status;
-  private Map<String,String> comment;
   private String userId;
+  private Map<String,String> comment;
 
   public boolean isActive() {
     return active;
@@ -134,6 +134,11 @@ public class UserCourses implements Serializable {
   public String getUserId() {
     return userId;
   }
+
+  public void setUserId(String userId) {
+    this.userId = userId;
+  }
+
   public Map<String, String> getComment() {
     return comment;
   }
@@ -141,9 +146,4 @@ public class UserCourses implements Serializable {
   public void setComment(Map<String, String> comment) {
     this.comment = comment;
   }
-  public void setUserId(String userId) {
-    this.userId = userId;
-  }
-
-
 }
