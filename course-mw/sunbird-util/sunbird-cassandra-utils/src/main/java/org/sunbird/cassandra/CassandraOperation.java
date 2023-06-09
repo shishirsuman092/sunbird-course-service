@@ -176,10 +176,10 @@ public interface CassandraOperation {
           Map<String, Object> updateAttributes,
           Map<String, Object> compositeKey);
 
+  Response getRecordByUserId(RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields);
+
   Response getRecordByIdentifier(RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields);
 
-  Response getRecordByUserId(RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields);
-  
   /**
    * Method to perform batch insert operation.
    *

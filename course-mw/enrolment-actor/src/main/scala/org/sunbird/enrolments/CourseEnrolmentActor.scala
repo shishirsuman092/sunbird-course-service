@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.commons.collections4.{CollectionUtils, MapUtils}
 import org.apache.commons.lang3.StringUtils
 import org.sunbird.cache.util.RedisCacheUtil
-import org.sunbird.cassandra.CassandraOperation
 import org.sunbird.common.CassandraUtil
 import org.sunbird.common.exception.ProjectCommonException
 import org.sunbird.common.models.response.Response
@@ -645,9 +644,11 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
          val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
          val comment: String = request.getOrDefault(JsonKey.COMMENT, "").asInstanceOf[String]
          val statusCode: Integer = request.getOrDefault(JsonKey.STATUS, 0).asInstanceOf[Integer]
-         val nodalFeedback:util.Map[String,String]=new util.HashMap[String,String]()
-         nodalFeedback.put(getUserRole(request.getContext.getOrDefault(JsonKey.REQUESTED_BY, "").asInstanceOf[String]),comment)
-         // creating request map
+       //storing nodalfeedback
+       val nodalFeedback: util.Map[String, String] = new util.HashMap[String, String]()
+       nodalFeedback.put(getUserRole(request.getContext.getOrDefault(JsonKey.REQUESTED_BY, "").asInstanceOf[String]), comment)
+
+       // creating request map
          val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(nodalFeedback,statusCode)
          // creating cassandra column map
          val data = CassandraUtil.changeCassandraColumnMapping(map)
@@ -666,26 +667,20 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val comment: String = request.getOrDefault(JsonKey.COMMENT, "").asInstanceOf[String]
         val statusCode: Integer = request.getOrDefault(JsonKey.STATUS, 0).asInstanceOf[Integer]
         // collecting response
-        (0 until (userIds.size())).foreach(x => {
-          val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userIds.get(x.toInt), courseId, batchId)
-          if(enrolmentData.getComment!=null) {
-            enrolmentData.getComment.put(getUserRole(request.getContext.getOrDefault(JsonKey.REQUESTED_BY, "").asInstanceOf[String]), comment)
-            // creating request map
-            val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(enrolmentData.getComment, statusCode)
-            // creating cassandra column map
-            val data = CassandraUtil.changeCassandraColumnMapping(map)
-            userCoursesDao.updateV2(request.getRequestContext, userIds.get(x.toInt), courseId, batchId, data)
-          }
-        })
+
+      (0 until (userIds.size())).foreach(x => {
+        val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userIds.get(x.toInt), courseId, batchId)
+        if (enrolmentData.getComment != null) {
+          enrolmentData.getComment.put(getUserRole(request.getContext.getOrDefault(JsonKey.REQUESTED_BY, "").asInstanceOf[String]), comment)
+          // creating request map
+          val map: _root_.java.util.HashMap[_root_.java.lang.String, _root_.java.lang.Object] = createCourseEvalRequestMap(enrolmentData.getComment, statusCode)
+          // creating cassandra column map
+          val data = CassandraUtil.changeCassandraColumnMapping(map)
+          userCoursesDao.updateV2(request.getRequestContext, userIds.get(x.toInt), courseId, batchId, data)
+        }
+      })
         sender().tell(successResponse(), self)
     }
-
-  private def createCourseEvalRequestMap(comment: util.Map[String,String], statusCode: Integer) = {
-    val map = new util.HashMap[String, Object]()
-    map.put(JsonKey.STATUS, statusCode.asInstanceOf[AnyRef])
-    map.put(JsonKey.COMMENT, comment.asInstanceOf[util.Map[String, String]])
-    map
-  }
 
   private def getUserRole(userid: String): String = {
     val response = cassandraOperation.getRecordByUserId(null, userRoleDb.getKeySpace, userRoleDb.getTableName, userid, null)
@@ -701,6 +696,15 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
       throw new NoSuchElementException(s"No matching role found for user ID: $userid")
     }
   }
+  private def createCourseEvalRequestMap(comment: util.Map[String,String], statusCode: Integer) = {
+    val map = new util.HashMap[String, Object]()
+    map.put(JsonKey.STATUS, statusCode.asInstanceOf[AnyRef])
+    map.put(JsonKey.COMMENT, comment.asInstanceOf[util.Map[String, String]])
+    map
+  }
+
+
+
 
 
 }
