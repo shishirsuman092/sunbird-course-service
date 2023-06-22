@@ -2,6 +2,7 @@ package org.sunbird.learner.actors.coursebatch.dao.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.sunbird.cassandra.CassandraOperation;
 import org.sunbird.common.CassandraUtil;
 import org.sunbird.common.models.response.Response;
@@ -71,10 +72,10 @@ public class CourseUserDaoImpl implements CourseUserDao {
     public Response update(RequestContext requestContext, String courseId, Map<String, Object> map) {
         logger.info(requestContext,"updating data based on courseId and return the response"+courseId);
         Map<String, Object> primaryKey = new HashMap<>();
-        primaryKey.put(JsonKey.COURSE_ID, courseId);
+        primaryKey.put(JsonKey.COURSE_ID_KEY, courseId);
         Map<String, Object> attributeMap = new HashMap<>();
         attributeMap.putAll(map);
-        attributeMap.remove(JsonKey.COURSE_ID);
+        attributeMap.remove(JsonKey.COURSE_ID_KEY);
         attributeMap = CassandraUtil.changeCassandraColumnMapping(attributeMap);
         logger.info(requestContext,"changing cassdra cloumnmapping and asign to attributeMap"+attributeMap);
         return cassandraOperation.updateRecord(
@@ -88,26 +89,21 @@ public class CourseUserDaoImpl implements CourseUserDao {
      * @return User courses information
      */
     public List<Map<String, Object>> readCourseUsersList(Request request,String courseId) {
-        Map<String, Object> filterMap = (Map<String, Object>) request.getRequest().getOrDefault(JsonKey.FILTERS,"");
-        Map<String, Object> filter = new HashMap<>();
-        filter.put(JsonKey.COURSE_ID,courseId);
-        filter.put(JsonKey.STATUS, filterMap.getOrDefault(JsonKey.STATUS,""));
-        filter.put(JsonKey.NAME,filterMap.getOrDefault(JsonKey.SEARCH,""));
+        Map<String, Object> search = (Map<String, Object>)request.getRequest().getOrDefault(JsonKey.FILTERS,"");
         Response response =
-                cassandraOperation.getRecordByIndexedPropertyPagination(courseUserDb.getKeySpace(), courseUserDb.getTableName(),filter,request);
+                cassandraOperation.getRecordByIndexedPropertyPagination(courseUserDb.getKeySpace(), courseUserDb.getTableName(),search,request);
         List<Map<String, Object>> courseUserList =
                 (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
         if (CollectionUtils.isEmpty(courseUserList)) {
             return null;
         }
         return courseUserList;
-                /*.stream()
-                .filter(courseUser -> (status == (boolean)courseUser.get(JsonKey.STATUS)))
-                .collect(Collectors.toList());*/
-
     }
 
 
-
+    public Response delete(RequestContext requestContext, String courseid) {
+        return cassandraOperation.deleteRecord(
+                courseUserDb.getKeySpace(), courseUserDb.getTableName(), courseid, requestContext);
+    }
 
 }

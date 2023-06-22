@@ -580,6 +580,11 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     try {
       Select selectQuery = select().all().from(keyspaceName, tableName);
       if (MapUtils.isNotEmpty(params)) {
+        boolean isSearch = false;
+        if(params.containsKey(JsonKey.SEARCH)) {
+          isSearch = (Boolean) params.getOrDefault(JsonKey.SEARCH, false);
+          params.remove(JsonKey.SEARCH);
+        }
         Select.Where where = selectQuery.where();
         for (Map.Entry<String, Object> filter : params.entrySet()) {
           Object value = filter.getValue();
@@ -588,20 +593,20 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
               if(((List) value).size()>0) {
                 where = createQueryForList(request, where, filter);
               }
-              if (filter.getKey().equalsIgnoreCase(JsonKey.NAME)) {
-                String option=value.toString();
-                where=where.and(QueryBuilder.like(JsonKey.NAME,option));
+            } else if(isSearch) {
+              logger.debug(null,"search param "+filter.getKey());
+              String option = filter.getValue().toString();
+              if (option.length() == 1) {
+                option += "%";
               }
-            } else {
+              option = option.replace("\\", "\\\\").replace("_", "\\_");
+              where = where.and(QueryBuilder.like(filter.getKey(), option));
+            }else {
               where = where.and(QueryBuilder.eq(filter.getKey(), filter.getValue()));
             }
           }
         }
       }
-      /*if(sortMap.getOrDefault(JsonKey.ENROLL_DATE,"").equals("desc"))
-        selectQuery.orderBy(QueryBuilder.desc(JsonKey.ENROLL_DATE));
-      if(sortMap.getOrDefault(JsonKey.ENROLL_DATE,"").equals("asc"))
-        selectQuery.orderBy(QueryBuilder.asc(JsonKey.ENROLL_DATE));*/
       Integer limit=(Integer) request.getOrDefault(JsonKey.LIMIT,0);
       if(limit != null && limit > 0){
         selectQuery.limit(limit);

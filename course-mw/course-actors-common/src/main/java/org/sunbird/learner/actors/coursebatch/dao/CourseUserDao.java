@@ -48,4 +48,6 @@ public interface CourseUserDao {
      */
     List<Map<String, Object>> readCourseUsersList(Request request, String courseId);
 
+    Response delete(RequestContext requestContext, String courseId);
+
 }
