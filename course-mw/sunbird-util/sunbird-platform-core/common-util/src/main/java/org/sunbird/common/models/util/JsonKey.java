@@ -141,16 +141,20 @@ public final class JsonKey {
   public static final String COURSE = "course";
   public static final String COURSE_ADDITIONAL_INFO = "courseAdditionalInfo";
   public static final String COURSE_BATCH_DB = "courseBatchDB";
+  public static final String COURSE_USER_DB = "course_user_mapping";
+  public static final String BATCH_USER_DB = "batch_user_mapping";
   public static final String COURSE_CREATED_FOR = "createdFor";
   public static final String COURSE_CREATOR = "courseCreator";
   public static final String COURSE_DURATION = "courseDuration";
   public static final String COURSE_ENROLL_DATE = "enrolledDate";
+  public static final String ENROLL_DATE = "enrolled_date";
   public static final String COURSE_ID = "courseId";
   public static final String COURSE_IDS = "courseIds";
   public static final String COURSE_LIST = "courseList";
   public static final String COURSE_LOGO_URL = "courseLogoUrl";
   public static final String COURSE_MANAGEMENT_DB = "courseManagement_db";
   public static final String COURSE_NAME = "courseName";
+  public static final String COURSENAME = "coursename";
   public static final String COURSE_PROGRESS = "progress";
   public static final String COURSE_PUBLISHED_STATUS = "course_publish_status";
   public static final String COURSE_VERSION = "courseVersion";
@@ -346,6 +350,8 @@ public final class JsonKey {
   public static final String NOTE_ID = "noteId";
   public static final String NOTIFICATION = "notification";
   public static final String NULL = "null";
+  public static final String NODAL_OFFICER= "NODAL_OFFICER";
+  public static final String ORG_ADMIN="ORG_ADMIN";
   public static final String OBJECT_ID = "objectId";
   public static final String OBJECT_IDS = "objectIds";
   public static final String OBJECT_TYPE = "objectType";
@@ -457,6 +463,7 @@ public final class JsonKey {
   public static final String ROLE_GROUP = "role_group";
   public static final String ROLE_GROUP_ID = "rolegroupid";
   public static final String ROLES = "roles";
+  public static final String USER_ROLES_DB = "user_roles";
   public static final String ROLLUP = "rollup";
   public static final String ROOT_ORG = "rootOrg";
   public static final String ROOT_ORG_ID = "rootOrgId";
@@ -1020,5 +1027,12 @@ public final class JsonKey {
   public static final String TEMPLATE_URL = "templateUrl";
   public static final String AUTH_ENABLED = "AuthenticationEnabled";
   public static final String COMMENT = "comment";
+  public static final String X_USER_ID = "X-User-ID";
+  public static final String INQUIRY_BASE_URL = "inquiry_api_base_url";
+  public static final String INQUIRY_ASSESS_SCORE_URL = "inquiry_api_assess_score_url";
+  public static final String EVALUABLE_FLAG_TAG="serverEvaluable";
+  public static final String ASSESS_REQ_BDY ="ASSESS_REQ_BODY";
+  public static final String QUESTIONS = "questions";
+  public static final String ASSESSMENTS="assessments";
   private JsonKey() {}
 }

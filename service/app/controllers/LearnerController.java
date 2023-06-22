@@ -19,6 +19,7 @@ import util.RequestValidator;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -44,9 +45,12 @@ public class LearnerController extends BaseController {
   public CompletionStage<Result> getContentState(Http.Request httpRequest) {
     try {
       JsonNode requestJson = httpRequest.body().asJson();
+      logger.debug(null, "getContentState requestJson - "+requestJson);
       Request request =
           createAndInitRequest("getConsumption", requestJson, httpRequest);
       String userId = (String) request.getContext().getOrDefault(JsonKey.REQUESTED_FOR, request.getContext().get(JsonKey.REQUESTED_BY));
+      logger.debug(request.getRequestContext(), "getContentState List enrol - request context - "+request.getContext());
+      logger.debug(request.getRequestContext(), "getContentState List enrol - userId value - "+userId);
       validator.validateRequestedBy(userId);
       request.getRequest().put(JsonKey.USER_ID, userId);
       validator.validateGetContentState(request);
@@ -106,6 +110,8 @@ public class LearnerController extends BaseController {
       } else {
         innerMap.put(JsonKey.CONTENTS, reqObj.get(JsonKey.CONTENTS));
         innerMap.put(JsonKey.ASSESSMENT_EVENTS, reqObj.getRequest().get(JsonKey.ASSESSMENT_EVENTS));
+        innerMap.put(JsonKey.EVALUABLE_FLAG_TAG, reqObj.getOrDefault(JsonKey.EVALUABLE_FLAG_TAG,"").toString());
+        innerMap.put(JsonKey.ASSESS_REQ_BDY,requestData.toString());
       }
       innerMap.put(JsonKey.USER_ID, reqObj.getRequest().get(JsonKey.USER_ID));
       reqObj.setRequest(innerMap);

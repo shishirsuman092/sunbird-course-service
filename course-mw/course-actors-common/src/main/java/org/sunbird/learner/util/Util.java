@@ -61,6 +61,8 @@ public final class Util {
     dbInfoMap.put(
         JsonKey.BULK_OP_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "bulk_upload_process"));
     dbInfoMap.put(JsonKey.COURSE_BATCH_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "course_batch"));
+    dbInfoMap.put(JsonKey.BATCH_USER_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "batch_user_mapping"));
+    dbInfoMap.put(JsonKey.COURSE_USER_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "course_user_mapping"));
     dbInfoMap.put(JsonKey.CLIENT_INFO_DB, getDbInfoObject(KEY_SPACE_NAME, "client_info"));
     dbInfoMap.put(JsonKey.USER_AUTH_DB, getDbInfoObject(KEY_SPACE_NAME, "user_auth"));
     dbInfoMap.put(
@@ -71,6 +73,7 @@ public final class Util {
     dbInfoMap.put(
             JsonKey.ASSESSMENT_AGGREGATOR_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "assessment_aggregator"));
     dbInfoMap.put(JsonKey.USER_ENROLMENTS_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "user_enrolments"));
+    dbInfoMap.put(JsonKey.USER_ROLES_DB, getDbInfoObject(KEY_SPACE_NAME, "user_roles"));
   }
 
   /**

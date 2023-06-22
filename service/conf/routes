@@ -27,6 +27,7 @@ POST     /v1/course/admin/unenroll          @controllers.courseenrollment.Course
 POST     /v1/course/admin/bulk/unenroll             @controllers.courseenrollment.CourseEnrollmentController.adminBulkUnenrollCourse(request: play.mvc.Http.Request)
 POST     /v1/course/admin/course/eval             @controllers.courseenrollment.CourseEnrollmentController.adminSubmitEvaluation(request: play.mvc.Http.Request)
 POST     /v1/course/admin/course/notissuecertificate             @controllers.courseenrollment.CourseEnrollmentController.adminNotIssueCertificate(request: play.mvc.Http.Request)
+POST     /v1/course/user/list             @controllers.courseenrollment.CourseEnrollmentController.courseUserList(request: play.mvc.Http.Request)
 POST     /v1/batch/bulk/enrollment          @controllers.bulkapimanagement.BulkUploadController.batchEnrollmentBulkUpload(request: play.mvc.Http.Request)
 POST     /v1/batch/bulk/unenrollment          @controllers.bulkapimanagement.BulkUploadController.batchUnEnrollmentBulkUpload(request: play.mvc.Http.Request)
 POST     /v1/content/state/read	        @controllers.LearnerController.getContentState(request: play.mvc.Http.Request)
@@ -59,6 +60,7 @@ PATCH 	 /v1/course/batch/update				@controllers.coursemanagement.CourseBatchCont
 GET		 /v1/course/batch/read/:batchId			@controllers.coursemanagement.CourseBatchController.getBatch(batchId:String, request: play.mvc.Http.Request)
 POST     /v1/course/batch/search                @controllers.coursemanagement.CourseBatchController.search(request: play.mvc.Http.Request)
 POST		 /v1/batch/participants/list			@controllers.coursemanagement.CourseBatchController.getParticipants(request: play.mvc.Http.Request)
+POST	 /v1/batch/admin/participants/list			@controllers.coursemanagement.CourseBatchController.getParticipantsDetails(request: play.mvc.Http.Request)
 
 # Textbook APIs
 POST    /v1/textbook/toc/upload/:textbookId           @controllers.textbook.TextbookController.uploadTOC(textbookId:String, request: play.mvc.Http.Request)

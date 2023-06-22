@@ -2,10 +2,12 @@ package controllers.courseenrollment;
 
 import akka.actor.ActorRef;
 import controllers.BaseController;
+import controllers.certificate.CertificateRequestValidator;
 import controllers.courseenrollment.validator.CourseEnrollmentRequestValidator;
 import org.sunbird.common.models.util.JsonKey;
 import org.sunbird.common.models.util.ProjectUtil;
 import org.sunbird.common.request.Request;
+import org.sunbird.learner.actor.operations.CourseActorOperations;
 import play.mvc.Http;
 import play.mvc.Result;
 
@@ -16,9 +18,14 @@ import java.util.concurrent.CompletionStage;
 
 public class CourseEnrollmentController extends BaseController {
 
+    public static final String REISSUE = "reIssue";
   @Inject
   @Named("course-enrolment-actor")
   private ActorRef courseEnrolmentActor;
+
+    @Inject
+    @Named("certificate-actor")
+    private ActorRef certificateActorRef;
 
   private CourseEnrollmentRequestValidator validator = new CourseEnrollmentRequestValidator();
 
@@ -33,7 +40,10 @@ public class CourseEnrollmentController extends BaseController {
                   fields.addAll(Arrays.asList(JsonKey.NAME, JsonKey.DESCRIPTION, JsonKey.LEAF_NODE_COUNT, JsonKey.APP_ICON));
                   queryParams.put("fields", fields.toArray(new String[0]));
               }
+
               String userId = (String) request.getContext().getOrDefault(JsonKey.REQUESTED_FOR, request.getContext().get(JsonKey.REQUESTED_BY));
+              logger.debug(request.getRequestContext(), "List enrol - request context - "+request.getContext());
+              logger.debug(request.getRequestContext(), "List enrol - userId value - "+userId);
               validator.validateRequestedBy(userId);
               request.getContext().put(JsonKey.USER_ID, userId);
               request.getRequest().put(JsonKey.USER_ID, userId);
@@ -182,6 +192,19 @@ public class CourseEnrollmentController extends BaseController {
             httpRequest);
     }
 
+    public CompletionStage<Result> courseUserList(Http.Request httpRequest){
+        return handleRequest(
+                courseEnrolmentActor, "courseBatchUserList",
+                httpRequest.body().asJson(),
+                (req)->{
+                    Request request = (Request) req;
+                    request.getContext().put(JsonKey.COURSE_ID, request.get(JsonKey.COURSE_ID));
+                    return null;
+                },
+                getAllRequestHeaders((httpRequest)),
+                httpRequest);
+
+    }
     public CompletionStage<Result> adminGetUserEnrolledCourses(Http.Request httpRequest) {
         return handleRequest(
                 courseEnrolmentActor, "listEnrol",
@@ -318,6 +341,23 @@ public class CourseEnrollmentController extends BaseController {
                     String courseId = req.getRequest().containsKey(JsonKey.COURSE_ID) ? JsonKey.COURSE_ID : JsonKey.COLLECTION_ID;
                     req.getRequest().put(JsonKey.COURSE_ID, req.getRequest().get(courseId));
                     validator.validateBulkCourseEval(req);
+                    return null;
+                },
+                getAllRequestHeaders(httpRequest),
+                httpRequest);
+    }
+
+    public CompletionStage<Result> issueCertificateForPIAA(Http.Request httpRequest) {
+        return handleRequest(
+                certificateActorRef,
+                CourseActorOperations.ISSUE_PIAA_CERTIFICATE.getValue(),
+                httpRequest.body().asJson(),
+                (request) -> {
+                    Request req = (Request) request;
+                    String courseId = req.getRequest().containsKey(JsonKey.COURSE_ID) ? JsonKey.COURSE_ID : JsonKey.COLLECTION_ID;
+                    req.getRequest().put(JsonKey.COURSE_ID, req.getRequest().get(courseId));
+                    new CertificateRequestValidator().validateIssueCertificateRequest(req);
+                    req.getContext().put(REISSUE, httpRequest.queryString().get(REISSUE));
                     return null;
                 },
                 getAllRequestHeaders(httpRequest),
