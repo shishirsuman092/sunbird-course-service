@@ -119,8 +119,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     validateEnrolment(batchData, enrolmentData, true)
     val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
     logger.info(request.getRequestContext, "Data for enrol - " + data)
+    addCourseUserBatchData(request, courseId, batchId, batchData, userId)
     upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
-    //addCourseUserBatchData(request, courseId, batchId, batchData, userId)
     logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
     cacheUtil.delete(getCacheKey(userId))
     //sender().tell(successResponse(), self)
@@ -151,6 +151,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         }
       }
     }
+    deleteUserCourseBatchData(request, courseId, batchId)
     upsertEnrollment(userId, courseId, batchId, data, false, request.getRequestContext)
     logger.info(request.getRequestContext, "CourseEnrolmentActor :: unEnroll :: Deleting redis for key " + getCacheKey(userId))
     cacheUtil.delete(getCacheKey(userId))
@@ -422,6 +423,17 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     upsertCourseBatchUser(userId, batchId, dataBatch, courseId, dataCourse, (null == courseUserData || null == batchUserData), request.getRequestContext)
   }
 
+  def deleteUserCourseBatchData(request: Request,courseId:String,batchId:String):Unit={
+    val courseUserData: CourseUser = courseUserDao.readById(request.getRequestContext, courseId)
+    val batchUserData: BatchUser = batchUserDao.readById(request.getRequestContext, batchId)
+    logger.info(request.getRequestContext, "fetching data in course_user_mapping and batch_user_mapping")
+    if(courseUserData.getUserId!=null||batchUserData.getUserId!=null){
+      batchUserDao.delete(request.getRequestContext, batchId)
+      courseUserDao.delete(request.getRequestContext, courseId)
+    }
+
+  }
+
   def upsertEnrollment(userId: String, courseId: String, batchId: String, data: java.util.Map[String, AnyRef], isNew: Boolean, requestContext: RequestContext): Unit = {
     val dataMap = CassandraUtil.changeCassandraColumnMapping(data)
     if (isNew) {
@@ -437,15 +449,13 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
   def courseBatchUserList(request: Request): Unit = {
     val courseId = request.get(JsonKey.COURSE_ID).asInstanceOf[String]
     val batchId = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
-    val userList: util.List[util.Map[String, AnyRef]] = courseUserDao.readCourseUsersList(request, courseId)
+    //val userList: util.List[util.Map[String, AnyRef]] = courseUserDao.readCourseUsersList(request, courseId)
     val batchList: util.List[util.Map[String, AnyRef]] = batchUserDao.readBatchUsersList(request, batchId)
     val courseBatchUserList:util.List[util.List[util.Map[String, AnyRef]]]=new java.util.ArrayList[java.util.List[java.util.Map[String, AnyRef]]]()
-    courseBatchUserList.add(userList)
-    //courseBatchUserList.add(batchList)
-    // assuming the batch id belongs to the same course
-    //val userMap:util.List[util.List[util.Map[String, AnyRef]]]=new java.util.ArrayList[java.util.List[java.util.Map[String, AnyRef]]]();
+    //courseBatchUserList.add(userList)
+    courseBatchUserList.add(batchList)
     val response = new Response
-    response.getResult.put(JsonKey.RESPONSE, courseBatchUserList)
+    response.put("data", courseBatchUserList)
     sender().tell(response, self)
   }
 
@@ -510,7 +520,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         put(JsonKey.COURSE_ID, courseId)
         put(JsonKey.USER_ID, userId)
         put(JsonKey.USER_NAME, userName)
-        put(JsonKey.NAME, courseName)
+        put(JsonKey.COURSENAME, courseName)
         put(JsonKey.ENROLL_DATE, ProjectUtil.getTimeStamp)
         put(JsonKey.STATUS, ProjectUtil.ProgressStatus.NOT_STARTED.getValue.asInstanceOf[AnyRef])
         put(JsonKey.COMMENT, comment)
