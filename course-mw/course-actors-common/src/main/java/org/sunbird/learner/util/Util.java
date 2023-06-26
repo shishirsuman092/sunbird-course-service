@@ -1,6 +1,8 @@
 package org.sunbird.learner.util;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.search.sort.SortOrder;
 import org.sunbird.common.models.util.JsonKey;
 import org.sunbird.common.models.util.LoggerUtil;
 import org.sunbird.common.request.Request;
@@ -11,14 +13,8 @@ import org.sunbird.helper.CassandraConnectionMngrFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
 
 /**
  * Utility class for actors
@@ -387,6 +383,36 @@ public final class Util {
     return actorMessage.getContext() != null && actorMessage.getContext().containsKey(key)
         ? (String) actorMessage.getContext().get(key)
         : "";
+  }
+
+  public static List<Map<String, Object>> sortMapByKey(List<Map<String, Object>> unsortedList, String sortKey, String defaultKey, String sortOrder) {
+    if (CollectionUtils.isNotEmpty(unsortedList)) {
+      if (unsortedList.stream().findFirst().get().keySet().contains(sortKey)) {
+        Object sortKeyVal = unsortedList.stream().findFirst().get().get(sortKey);
+        if(sortKeyVal instanceof Date) {
+          if(sortOrder.equals(SortOrder.DESC.name())) {
+            unsortedList.sort(Comparator.comparing(m -> (Date) m.get(sortKey), Comparator.nullsLast(Comparator.reverseOrder())));
+          } else {
+            unsortedList.sort(Comparator.comparing(m -> (Date) m.get(sortKey), Comparator.nullsLast(Comparator.naturalOrder())));
+          }
+        } else if(sortKeyVal instanceof Integer) {
+          if(sortOrder.equals(SortOrder.DESC.name())) {
+            unsortedList.sort(Comparator.comparing(m -> (Integer) m.get(sortKey), Comparator.nullsLast(Comparator.reverseOrder())));
+          } else {
+            unsortedList.sort(Comparator.comparing(m -> (Integer) m.get(sortKey), Comparator.nullsLast(Comparator.naturalOrder())));
+          }
+        } else {
+          if(sortOrder.equals(SortOrder.DESC.name())) {
+            unsortedList.sort(Comparator.comparing(m -> (String) m.get(sortKey), Comparator.nullsLast(Comparator.reverseOrder())));
+          } else {
+            unsortedList.sort(Comparator.comparing(m -> (String) m.get(sortKey), Comparator.nullsLast(Comparator.naturalOrder())));
+          }
+        }
+      } else {
+        unsortedList.sort(Comparator.comparing(m -> (Date) m.get(defaultKey), Comparator.nullsLast(Comparator.reverseOrder())));
+      }
+    }
+    return unsortedList;
   }
 
 }
