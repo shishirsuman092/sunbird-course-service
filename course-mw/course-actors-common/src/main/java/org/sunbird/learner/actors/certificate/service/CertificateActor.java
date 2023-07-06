@@ -1,10 +1,8 @@
 package org.sunbird.learner.actors.certificate.service;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.sunbird.actor.base.BaseActor;
 import org.sunbird.common.exception.ProjectCommonException;
@@ -154,10 +152,11 @@ public class CertificateActor extends BaseActor {
         CourseJsonKey.ACTOR,
         new HashMap<String, Object>() {
           {
-            put(JsonKey.ID, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getActorId());
-            put(JsonKey.TYPE, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getActorType());
+            put(JsonKey.ID, InstructionEvent.CERTIFICATE_GENERATOR.getActorId());
+            put(JsonKey.TYPE, InstructionEvent.CERTIFICATE_GENERATOR.getActorType());
           }
         });
+
 
     String id = OneWayHashing.encryptVal(batchId + CourseJsonKey.UNDERSCORE + courseId);
     data.put(
@@ -165,29 +164,75 @@ public class CertificateActor extends BaseActor {
         new HashMap<String, Object>() {
           {
             put(JsonKey.ID, id);
-            put(JsonKey.TYPE, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getType());
+            put(JsonKey.TYPE, InstructionEvent.CERTIFICATE_GENERATOR.getType());
           }
         });
 
-    data.put(CourseJsonKey.ACTION, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getAction());
+    //data.put(CourseJsonKey.ACTION, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getAction());
+    Object[] dataObj = new Object[1];
+    dataObj[0] = new HashMap<String, Object>() {
+      {
+        put(JsonKey.RECIPIENT_NAME,"Creation");
+        put(JsonKey.RECIPIENT_ID,userIds.get(0));
+      }
+    };
+    Object[] publicKeyObj = new Object[2];
+    publicKeyObj[0] = "1";
+    publicKeyObj[1] = "2";
+
+    Map<String,Object> issuerObj = new HashMap<String,Object>();
+    issuerObj.put(JsonKey.NAME, "UPSMF trainning and research program");
+    issuerObj.put(JsonKey.URL, "https://gcert.gujarat.gov.in/gcert/");
+    issuerObj.put("publicKey", publicKeyObj);
+
+    Map<String,String> signatoryListMap = new HashMap<String,String>();
+    signatoryListMap.put(JsonKey.NAME,"Regulator UPSMF");
+    signatoryListMap.put(JsonKey.ID,"Regulator");
+    signatoryListMap.put("designation","Regulator");
+    signatoryListMap.put(JsonKey.IMAGE, "https://cdn.pixabay.com/photo/2014/11/09/08/06/signature-523237__340.jpg");
+    Object[] signatoryListObj = new Object[1];
+    signatoryListObj[0] = signatoryListMap;
+
+    Map<String,String> criteriaMap = new HashMap<String,String>();
+    criteriaMap.put("narrative", "course completion certificate");
+
+    Map<String,String> relatedMap = new HashMap<String,String>();
+    relatedMap.put(JsonKey.TYPE, "course");
+    relatedMap.put(JsonKey.BATCH_ID, batchId);
+    relatedMap.put(JsonKey.COURSE_ID, courseId);
+
 
     data.put(
         CourseJsonKey.E_DATA,
         new HashMap<String, Object>() {
           {
-            if (CollectionUtils.isNotEmpty(userIds)) {
-              put(JsonKey.USER_IDs, userIds);
-            }
-            put(JsonKey.BATCH_ID, batchId);
-            put(JsonKey.COURSE_ID, courseId);
-            put(CourseJsonKey.ACTION, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getAction());
-            put(CourseJsonKey.ITERATION, 1);
-            if (reIssue) {
-              put(CourseJsonKey.REISSUE, true);
-            }
+//            if (CollectionUtils.isNotEmpty(userIds)) {
+//              put(JsonKey.USER_IDs, userIds);
+//            }
+            //put(JsonKey.BATCH_ID, batchId);
+            put(JsonKey.USER_ID, userIds.get(0));
+            put("svgTemplate", "https://ntpstagingall.blob.core.windows.net/user/cert/File-01311849840255795242.svg");
+            put(JsonKey.TEMPLATE_ID, "template_01_dev_001");
+            put(JsonKey.COURSE_NAME, "new course june29");
+            put(JsonKey.DATA, dataObj);
+            put(JsonKey.NAME, "100PercentCompletionCertificate");
+            put(JsonKey.TAG, batchId);
+            put("issuer", issuerObj);
+            put("signatoryList", signatoryListObj);
+            put("criteria", criteriaMap);
+            put( "basePath", "https://dev.sunbirded.org/certs");
+            put( "related", relatedMap);
+            //put(JsonKey.COURSE_ID, courseId);
+            //put(CourseJsonKey.ACTION, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getAction());
+            //put(CourseJsonKey.ITERATION, 1);
+
+//            if (reIssue) {
+//              put(CourseJsonKey.REISSUE, true);
+//            }
           }
         });
-    String topic = ProjectUtil.getConfigValue("kafka_topics_certificate_instruction");
+    System.out.println("Edata json is "+ data.toString());
+    String topic = "sunbirddev.generate.certificate.request";
     InstructionEventGenerator.pushInstructionEvent(batchId, topic, data);
   }
 }

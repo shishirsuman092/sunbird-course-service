@@ -6,6 +6,8 @@ import java.util.List;
 public abstract class CourseJsonKey {
 
   public static final String ACTOR = "actor";
+  public static final String CONTEXT = "context";
+  public static final String PDATA = "pdata";
   public static final String ACTION = "action";
   public static final String OBJECT = "object";
   public static final String E_DATA = "edata";
